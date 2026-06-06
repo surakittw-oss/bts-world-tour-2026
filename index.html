@@ -94,20 +94,38 @@
         <div id="tt-price" class="text-lg font-bold text-green-400">6,800 THB</div>
     </div>
 
-    <!-- Header UI -->
-    <div class="ui-layer top-0 left-0 w-full p-6 flex justify-between items-start">
-        <div>
-            <h1 class="text-4xl md:text-5xl font-black italic tracking-tighter font-['Montserrat'] glow-text">
-                <span class="text-red-500">BTS</span> WORLD TOUR
-            </h1>
-            <h2 class="text-2xl md:text-3xl font-black tracking-widest text-white mt-[-5px] font-['Montserrat']">
-                ARIRANG
-            </h2>
-            <p class="text-sm md:text-base text-gray-300 mt-2 flex items-center">
-                <svg class="w-4 h-4 mr-1 text-fuchsia-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd"></path></svg>
-                Rajamangala National Stadium
-            </p>
-            <p class="text-xs text-gray-400 mt-1">Interactive 3D Seating Plan</p>
+    <!-- Header UI (Updated with Tape Logo) -->
+    <div class="ui-layer top-8 left-0 w-full flex justify-center pointer-events-none">
+        <div class="flex flex-col items-center">
+            <!-- Emulating the red tape logo -->
+            <div class="flex flex-col items-center space-y-2 font-['Montserrat'] font-black text-[#0f0f15] drop-shadow-[0_0_20px_rgba(255,255,255,0.4)]">
+                <div class="bg-[#ff1a1a] px-4 md:px-6 py-1 transform -rotate-2">
+                    <span class="text-3xl md:text-5xl tracking-widest">BTS</span>
+                </div>
+                <div class="bg-[#ff1a1a] px-6 md:px-8 py-1 transform rotate-1">
+                    <span class="text-4xl md:text-6xl tracking-widest">WORLD TOUR</span>
+                </div>
+                <div class="bg-[#ff1a1a] px-8 md:px-10 py-1 transform -rotate-1">
+                    <span class="text-4xl md:text-6xl tracking-widest">ARIRANG</span>
+                </div>
+            </div>
+            <!-- SVGs for the 3 symbols -->
+            <div class="flex space-x-6 mt-6 drop-shadow-[0_0_15px_rgba(255,255,255,0.6)]">
+                <svg width="50" height="50" md:width="60" md:height="60" viewBox="0 0 100 100"><circle cx="50" cy="50" r="45" fill="black"/><circle cx="50" cy="50" r="14" fill="white"/></svg>
+                <svg width="50" height="50" md:width="60" md:height="60" viewBox="0 0 100 100">
+                    <circle cx="50" cy="50" r="45" fill="black"/>
+                    <rect x="20" y="26" width="60" height="12" fill="white"/>
+                    <rect x="20" y="44" width="60" height="12" fill="white"/>
+                    <rect x="20" y="62" width="60" height="12" fill="white"/>
+                </svg>
+                <svg width="50" height="50" md:width="60" md:height="60" viewBox="0 0 100 100">
+                    <circle cx="50" cy="50" r="45" fill="black"/>
+                    <rect x="20" y="26" width="60" height="12" fill="white"/>
+                    <rect x="20" y="44" width="24" height="12" fill="white"/>
+                    <rect x="56" y="44" width="24" height="12" fill="white"/>
+                    <rect x="20" y="62" width="60" height="12" fill="white"/>
+                </svg>
+            </div>
         </div>
     </div>
 
@@ -372,6 +390,40 @@
         ground.position.y = -1;
         stadiumGroup.add(ground);
 
+        // --- Add BTS Members (7 People) ---
+        const members = [];
+        const btsGroup = new THREE.Group();
+        
+        // Simple human model materials
+        const skinMat = new THREE.MeshStandardMaterial({ color: 0xffdcb1, roughness: 0.4 });
+        const clothesMat = new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.7 }); // Black suits
+        
+        const headGeo = new THREE.SphereGeometry(0.7, 16, 16);
+        const bodyGeo = new THREE.CylinderGeometry(0.6, 0.6, 2.2, 16);
+        
+        for (let i = 0; i < 7; i++) {
+            const member = new THREE.Group();
+            
+            const head = new THREE.Mesh(headGeo, skinMat);
+            head.position.y = 2.4;
+            member.add(head);
+            
+            const body = new THREE.Mesh(bodyGeo, clothesMat);
+            body.position.y = 1.1;
+            member.add(body);
+            
+            // Arrange in a V-formation on the center stage
+            const spacing = 2.2;
+            const offset = (i - 3) * spacing;
+            member.position.x = offset;
+            member.position.z = -Math.abs(offset) * 0.6; // V-shape facing +Z camera
+            member.position.y = 1; 
+            
+            btsGroup.add(member);
+            members.push({ mesh: member, jumpOffset: Math.random() * Math.PI * 2 });
+        }
+        stadiumGroup.add(btsGroup);
+
         // STRETCH TO OVAL (Rajamangala Stadium Shape)
         // By scaling the Z axis, circles become ovals
         stadiumGroup.scale.set(1, 1, 1.4);
@@ -459,6 +511,13 @@
             stageLight.intensity = 1.5 + Math.sin(time * 3) * 0.5;
             purpleGlow.intensity = 2 + Math.cos(time * 2) * 1;
 
+            // Animate BTS Members jumping slightly
+            if (typeof members !== 'undefined') {
+                members.forEach(m => {
+                    m.mesh.position.y = 1 + Math.abs(Math.sin(time * 5 + m.jumpOffset)) * 1.5;
+                });
+            }
+
             controls.update();
             renderer.render(scene, camera);
         }
@@ -485,3 +544,4 @@
     </script>
 </body>
 </html>
+
