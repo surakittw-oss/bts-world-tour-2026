@@ -199,7 +199,7 @@
         controls.maxPolarAngle = Math.PI / 2 - 0.05;
         controls.minDistance = 30;
         controls.maxDistance = 350;
-        controls.autoRotate = true;
+        controls.autoRotate = false; // ปิดการหมุนอัตโนมัติที่นี่
         controls.autoRotateSpeed = 0.5;
 
         // --- 2. Lighting ---
@@ -551,19 +551,17 @@
             tooltip.style.left = clientX + 'px';
             tooltip.style.top = clientY + 'px';
             
-            controls.autoRotate = false;
+            // ลบ controls.autoRotate = false ออก เพราะปิดถาวรแล้ว
         }
 
         window.addEventListener('pointermove', handleInteraction);
         window.addEventListener('touchstart', handleInteraction, { passive: true });
         window.addEventListener('touchmove', handleInteraction, { passive: true });
 
-        window.addEventListener('pointerleave', () => {
-            controls.autoRotate = true;
-        });
+        // ลบ Event pointerleave ที่คอยเปิด autoRotate ทิ้งไป
         
         window.addEventListener('touchend', () => {
-            controls.autoRotate = true;
+            // ลบ controls.autoRotate = true ทิ้งไป
             // Hide tooltip when touch ends
             setTimeout(() => {
                 if(hoveredMesh) {
@@ -674,5 +672,6 @@
     </script>
 </body>
 </html>
+
 
 
