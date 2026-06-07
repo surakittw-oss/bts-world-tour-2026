@@ -3,175 +3,90 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BTS World Tour Arirang - 3D Interactive Seat Map</title>
+    <title>BTS World Tour Arirang - Real Stage 3D Map</title>
     
-    <!-- Tailwind CSS for UI styling -->
     <script src="https://cdn.tailwindcss.com"></script>
-    
-    <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;600;800&family=Montserrat:wght@700;900&display=swap" rel="stylesheet">
     
     <style>
-        body {
-            margin: 0;
-            overflow: hidden;
-            font-family: 'Kanit', sans-serif;
-            background-color: #050505;
-        }
-        
-        #canvas-container {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100vh;
-            z-index: 1;
-        }
-
-        .ui-layer {
-            position: absolute;
-            z-index: 10;
-        }
-
+        body { margin: 0; overflow: hidden; font-family: 'Kanit', sans-serif; background-color: #050505; }
+        #canvas-container { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 1; }
+        .ui-layer { position: absolute; z-index: 10; }
         .interactive-panel {
-            pointer-events: auto; /* Enable interaction for UI panels */
-            backdrop-filter: blur(10px);
-            background: rgba(15, 15, 20, 0.7);
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            pointer-events: auto; backdrop-filter: blur(10px);
+            background: rgba(15, 15, 20, 0.7); border: 1px solid rgba(255, 255, 255, 0.1);
             box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
         }
-
-        /* Tooltip style */
         #tooltip {
-            position: absolute;
-            background: rgba(0, 0, 0, 0.85);
-            border: 1px solid #333;
-            color: white;
-            padding: 12px 16px;
-            border-radius: 8px;
-            pointer-events: none;
-            opacity: 0;
-            transition: opacity 0.2s;
-            z-index: 20;
-            transform: translate(-50%, -120%);
+            position: absolute; background: rgba(0, 0, 0, 0.85); border: 1px solid #333; color: white;
+            padding: 12px 16px; border-radius: 8px; pointer-events: none; opacity: 0;
+            transition: opacity 0.2s; z-index: 20; transform: translate(-50%, -120%);
             box-shadow: 0 0 15px rgba(255, 255, 255, 0.1);
         }
-
-        .glow-text {
-            text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
-        }
-        
         .loading {
-            position: fixed;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background: #050505;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 50;
-            color: white;
-            transition: opacity 0.5s;
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: #050505;
+            display: flex; justify-content: center; align-items: center; z-index: 50;
+            color: white; transition: opacity 0.5s;
         }
     </style>
 </head>
 <body class="text-white">
 
-    <!-- Loading Screen -->
     <div id="loading" class="loading flex-col">
         <div class="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-fuchsia-500 mb-4"></div>
-        <h2 class="text-2xl font-bold tracking-widest font-['Montserrat']">INITIALIZING 3D MAP</h2>
-        <p class="text-gray-400 mt-2">กำลังสร้างสนามและจำลองศิลปิน...</p>
+        <h2 class="text-2xl font-bold tracking-widest font-['Montserrat']">GENERATING REAL STAGE</h2>
+        <p class="text-gray-400 mt-2">กำลังจำลองเวที X-Shape จากสถานที่จริง...</p>
     </div>
 
-    <!-- 3D Canvas -->
     <div id="canvas-container"></div>
 
-    <!-- Tooltip -->
     <div id="tooltip" class="backdrop-blur-md">
         <div class="text-xs text-gray-400 mb-1 font-bold">ZONE</div>
         <div id="tt-zone" class="text-2xl font-black mb-1 font-['Montserrat']">A1</div>
         <div id="tt-price" class="text-lg font-bold text-green-400">6,800 THB</div>
     </div>
 
-    <!-- Header UI (Logo moved to Top Left and scaled down for mobile) -->
+    <!-- Header UI -->
     <div class="ui-layer top-4 left-4 sm:top-6 sm:left-6 transform scale-[0.35] sm:scale-[0.4] md:scale-50 origin-top-left pointer-events-none">
         <div class="flex flex-col items-center">
-            <!-- Emulating the red tape logo -->
             <div class="flex flex-col items-center space-y-2 font-['Montserrat'] font-black text-[#0f0f15] drop-shadow-[0_0_20px_rgba(255,255,255,0.4)]">
-                <div class="bg-[#ff1a1a] px-4 md:px-6 py-1 transform -rotate-2">
-                    <span class="text-3xl md:text-5xl tracking-widest">BTS</span>
-                </div>
-                <div class="bg-[#ff1a1a] px-6 md:px-8 py-1 transform rotate-1">
-                    <span class="text-4xl md:text-6xl tracking-widest">WORLD TOUR</span>
-                </div>
-                <div class="bg-[#ff1a1a] px-8 md:px-10 py-1 transform -rotate-1">
-                    <span class="text-4xl md:text-6xl tracking-widest">ARIRANG</span>
-                </div>
+                <div class="bg-[#ff1a1a] px-4 md:px-6 py-1 transform -rotate-2"><span class="text-3xl md:text-5xl tracking-widest">BTS</span></div>
+                <div class="bg-[#ff1a1a] px-6 md:px-8 py-1 transform rotate-1"><span class="text-4xl md:text-6xl tracking-widest">WORLD TOUR</span></div>
+                <div class="bg-[#ff1a1a] px-8 md:px-10 py-1 transform -rotate-1"><span class="text-4xl md:text-6xl tracking-widest">ARIRANG</span></div>
             </div>
-            <!-- SVGs for the 3 symbols -->
             <div class="flex space-x-6 mt-6 drop-shadow-[0_0_15px_rgba(255,255,255,0.6)]">
-                <svg width="50" height="50" md:width="60" md:height="60" viewBox="0 0 100 100"><circle cx="50" cy="50" r="45" fill="black"/><circle cx="50" cy="50" r="14" fill="white"/></svg>
-                <svg width="50" height="50" md:width="60" md:height="60" viewBox="0 0 100 100">
-                    <circle cx="50" cy="50" r="45" fill="black"/>
-                    <rect x="20" y="26" width="60" height="12" fill="white"/>
-                    <rect x="20" y="44" width="60" height="12" fill="white"/>
-                    <rect x="20" y="62" width="60" height="12" fill="white"/>
-                </svg>
-                <svg width="50" height="50" md:width="60" md:height="60" viewBox="0 0 100 100">
-                    <circle cx="50" cy="50" r="45" fill="black"/>
-                    <rect x="20" y="26" width="60" height="12" fill="white"/>
-                    <rect x="20" y="44" width="24" height="12" fill="white"/>
-                    <rect x="56" y="44" width="24" height="12" fill="white"/>
-                    <rect x="20" y="62" width="60" height="12" fill="white"/>
-                </svg>
+                <svg width="50" height="50" viewBox="0 0 100 100"><circle cx="50" cy="50" r="45" fill="black"/><circle cx="50" cy="50" r="14" fill="white"/></svg>
+                <svg width="50" height="50" viewBox="0 0 100 100"><circle cx="50" cy="50" r="45" fill="black"/><rect x="20" y="26" width="60" height="12" fill="white"/><rect x="20" y="44" width="60" height="12" fill="white"/><rect x="20" y="62" width="60" height="12" fill="white"/></svg>
+                <svg width="50" height="50" viewBox="0 0 100 100"><circle cx="50" cy="50" r="45" fill="black"/><rect x="20" y="26" width="60" height="12" fill="white"/><rect x="20" y="44" width="24" height="12" fill="white"/><rect x="56" y="44" width="24" height="12" fill="white"/><rect x="20" y="62" width="60" height="12" fill="white"/></svg>
             </div>
         </div>
     </div>
 
-    <!-- Instructions UI (Hidden on mobile) -->
+    <!-- Instructions UI -->
     <div class="ui-layer bottom-4 left-4 sm:bottom-6 sm:left-6 interactive-panel rounded-lg p-3 sm:p-4 hidden md:block">
         <p class="text-sm font-semibold text-gray-200 mb-2">วิธีใช้งาน (Controls)</p>
         <ul class="text-xs text-gray-400 space-y-1">
-            <li class="flex items-center"><span class="w-6 h-6 bg-gray-800 rounded flex items-center justify-center mr-2">🖱️</span> คลิกซ้ายค้างแล้วลาก เพื่อหมุนมุมกล้อง</li>
-            <li class="flex items-center"><span class="w-6 h-6 bg-gray-800 rounded flex items-center justify-center mr-2">⚙️</span> เลื่อนลูกกลิ้งเมาส์ เพื่อซูมเข้า/ออก</li>
-            <li class="flex items-center"><span class="w-6 h-6 bg-gray-800 rounded flex items-center justify-center mr-2">👆</span> นำเมาส์ชี้ที่โซน เพื่อดูราคา</li>
+            <li class="flex items-center"><span class="w-6 h-6 bg-gray-800 rounded flex items-center justify-center mr-2">🖱️</span> คลิก/แตะค้าง เพื่อหมุนมุมกล้อง</li>
+            <li class="flex items-center"><span class="w-6 h-6 bg-gray-800 rounded flex items-center justify-center mr-2">⚙️</span> เลื่อนลูกกลิ้ง/ถ่างนิ้ว เพื่อซูม</li>
+            <li class="flex items-center"><span class="w-6 h-6 bg-gray-800 rounded flex items-center justify-center mr-2">👆</span> ชี้/แตะที่โซน เพื่อดูราคา</li>
         </ul>
     </div>
 
-    <!-- Pricing Legend UI (Responsive size) -->
+    <!-- Pricing Legend UI -->
     <div class="ui-layer bottom-4 right-4 sm:bottom-6 sm:right-6 interactive-panel rounded-xl overflow-hidden w-40 sm:w-48 md:w-64">
         <div class="bg-gradient-to-r from-gray-800 to-gray-900 p-2 sm:p-3 border-b border-gray-700">
             <h3 class="font-black tracking-widest text-center text-sm sm:text-lg font-['Montserrat']">PRICING</h3>
         </div>
         <div class="p-0">
-            <div class="flex items-center border-b border-gray-800 hover:bg-gray-800 transition">
-                <div class="w-10 sm:w-16 h-8 sm:h-10 bg-[#b53bb5] flex items-center justify-center font-bold text-xs sm:text-sm shadow-[0_0_10px_#b53bb5]">VIP</div>
-                <div class="flex-1 text-right pr-2 sm:pr-4 font-bold text-xs sm:text-base">7,800 <span class="text-[10px] sm:text-xs text-gray-400 font-normal">THB</span></div>
-            </div>
-            <div class="flex items-center border-b border-gray-800 hover:bg-gray-800 transition">
-                <div class="w-10 sm:w-16 h-8 sm:h-10 bg-[#ff1a1a] flex items-center justify-center font-bold text-xs sm:text-sm">RED</div>
-                <div class="flex-1 text-right pr-2 sm:pr-4 font-bold text-xs sm:text-base">6,800 <span class="text-[10px] sm:text-xs text-gray-400 font-normal">THB</span></div>
-            </div>
-            <div class="flex items-center border-b border-gray-800 hover:bg-gray-800 transition">
-                <div class="w-10 sm:w-16 h-8 sm:h-10 bg-[#0055ff] flex items-center justify-center font-bold text-xs sm:text-sm">BLUE</div>
-                <div class="flex-1 text-right pr-2 sm:pr-4 font-bold text-xs sm:text-base">6,300 <span class="text-[10px] sm:text-xs text-gray-400 font-normal">THB</span></div>
-            </div>
-            <div class="flex items-center border-b border-gray-800 hover:bg-gray-800 transition">
-                <div class="w-10 sm:w-16 h-8 sm:h-10 bg-[#ffd700] text-black flex items-center justify-center font-bold text-xs sm:text-sm">YEL</div>
-                <div class="flex-1 text-right pr-2 sm:pr-4 font-bold text-xs sm:text-base">5,300 <span class="text-[10px] sm:text-xs text-gray-400 font-normal">THB</span></div>
-            </div>
-            <div class="flex items-center border-b border-gray-800 hover:bg-gray-800 transition">
-                <div class="w-10 sm:w-16 h-8 sm:h-10 bg-[#00cc66] flex items-center justify-center font-bold text-xs sm:text-sm">GRN</div>
-                <div class="flex-1 text-right pr-2 sm:pr-4 font-bold text-xs sm:text-base">4,300 <span class="text-[10px] sm:text-xs text-gray-400 font-normal">THB</span></div>
-            </div>
-            <div class="flex items-center hover:bg-gray-800 transition">
-                <div class="w-10 sm:w-16 h-8 sm:h-10 bg-[#00cccc] text-black flex items-center justify-center font-bold text-xs sm:text-sm">TEAL</div>
-                <div class="flex-1 text-right pr-2 sm:pr-4 font-bold text-xs sm:text-base">3,300 <span class="text-[10px] sm:text-xs text-gray-400 font-normal">THB</span></div>
-            </div>
+            <div class="flex items-center border-b border-gray-800 hover:bg-gray-800 transition"><div class="w-10 sm:w-16 h-8 sm:h-10 bg-[#b53bb5] flex items-center justify-center font-bold text-xs sm:text-sm shadow-[0_0_10px_#b53bb5]">VIP</div><div class="flex-1 text-right pr-2 sm:pr-4 font-bold text-xs sm:text-base">7,800 <span class="text-[10px] sm:text-xs text-gray-400">THB</span></div></div>
+            <div class="flex items-center border-b border-gray-800 hover:bg-gray-800 transition"><div class="w-10 sm:w-16 h-8 sm:h-10 bg-[#ff1a1a] flex items-center justify-center font-bold text-xs sm:text-sm">RED</div><div class="flex-1 text-right pr-2 sm:pr-4 font-bold text-xs sm:text-base">6,800 <span class="text-[10px] sm:text-xs text-gray-400">THB</span></div></div>
+            <div class="flex items-center border-b border-gray-800 hover:bg-gray-800 transition"><div class="w-10 sm:w-16 h-8 sm:h-10 bg-[#0055ff] flex items-center justify-center font-bold text-xs sm:text-sm">BLUE</div><div class="flex-1 text-right pr-2 sm:pr-4 font-bold text-xs sm:text-base">6,300 <span class="text-[10px] sm:text-xs text-gray-400">THB</span></div></div>
+            <div class="flex items-center border-b border-gray-800 hover:bg-gray-800 transition"><div class="w-10 sm:w-16 h-8 sm:h-10 bg-[#ffd700] text-black flex items-center justify-center font-bold text-xs sm:text-sm">YEL</div><div class="flex-1 text-right pr-2 sm:pr-4 font-bold text-xs sm:text-base">5,300 <span class="text-[10px] sm:text-xs text-gray-400">THB</span></div></div>
+            <div class="flex items-center border-b border-gray-800 hover:bg-gray-800 transition"><div class="w-10 sm:w-16 h-8 sm:h-10 bg-[#00cc66] flex items-center justify-center font-bold text-xs sm:text-sm">GRN</div><div class="flex-1 text-right pr-2 sm:pr-4 font-bold text-xs sm:text-base">4,300 <span class="text-[10px] sm:text-xs text-gray-400">THB</span></div></div>
+            <div class="flex items-center hover:bg-gray-800 transition"><div class="w-10 sm:w-16 h-8 sm:h-10 bg-[#00cccc] text-black flex items-center justify-center font-bold text-xs sm:text-sm">TEAL</div><div class="flex-1 text-right pr-2 sm:pr-4 font-bold text-xs sm:text-base">3,300 <span class="text-[10px] sm:text-xs text-gray-400">THB</span></div></div>
         </div>
     </div>
 
-    <!-- Three.js Library & Dependencies -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
 
@@ -179,14 +94,13 @@
         // --- 1. Scene Setup ---
         const container = document.getElementById('canvas-container');
         const scene = new THREE.Scene();
-        
         scene.background = new THREE.Color(0x0a0a0f);
-        scene.fog = new THREE.FogExp2(0x0a0a0f, 0.003);
+        scene.fog = new THREE.FogExp2(0x0a0a0f, 0.0025); // Adjusted fog for larger scale
 
-        const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
-        // Responsive camera distance: zoom out more on mobile screens
-        const initialCameraZ = window.innerWidth < 768 ? 320 : 220;
-        camera.position.set(0, 140, initialCameraZ); 
+        const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 2000);
+        // Zoomed out more to accommodate the massive realistic stage
+        const initialCameraZ = window.innerWidth < 768 ? 450 : 350;
+        camera.position.set(0, 200, initialCameraZ); 
 
         const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
@@ -196,29 +110,111 @@
         const controls = new THREE.OrbitControls(camera, renderer.domElement);
         controls.enableDamping = true;
         controls.dampingFactor = 0.05;
-        controls.maxPolarAngle = Math.PI / 2 - 0.05;
-        controls.minDistance = 30;
-        controls.maxDistance = 350;
-        controls.autoRotate = false; // ปิดการหมุนอัตโนมัติที่นี่
-        controls.autoRotateSpeed = 0.5;
+        controls.maxPolarAngle = Math.PI / 2 - 0.02;
+        controls.minDistance = 50;
+        controls.maxDistance = 600;
+        controls.autoRotate = false; // User controls rotation
 
         // --- 2. Lighting ---
-        const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
         scene.add(ambientLight);
 
-        const stageLight = new THREE.PointLight(0xffffff, 1.5, 200);
-        stageLight.position.set(0, 10, 0);
+        const stageLight = new THREE.PointLight(0xffffff, 2, 300);
+        stageLight.position.set(0, 30, 0);
         scene.add(stageLight);
 
-        const purpleGlow = new THREE.PointLight(0xb53bb5, 2, 150);
-        purpleGlow.position.set(0, 20, 0);
+        // Purple stadium fill light
+        const purpleGlow = new THREE.PointLight(0x8a2be2, 1.5, 400);
+        purpleGlow.position.set(0, 80, 0);
         scene.add(purpleGlow);
 
         const dirLight = new THREE.DirectionalLight(0x3B82F6, 0.6);
-        dirLight.position.set(100, 100, 50);
+        dirLight.position.set(100, 200, 50);
         scene.add(dirLight);
 
-        // --- 3. Data & Config ---
+        // --- 3. Stage Construction (Replicated from Images) ---
+        const stageHeight = 3;
+        
+        // Materials for Stage
+        const stageFloorMat = new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.8, metalness: 0.4 });
+        const screenMatBg = new THREE.MeshStandardMaterial({ color: 0x440000, emissive: 0xcc0033, emissiveIntensity: 1.5 });
+        const screenMatFg = new THREE.MeshStandardMaterial({ color: 0xffffff, emissive: 0xffffff, emissiveIntensity: 2 });
+        const cyanNeon = new THREE.MeshBasicMaterial({ color: 0x00e5ff });
+        
+        const realStage = new THREE.Group();
+
+        // 3.1 Center Square Platform
+        const cSize = 28;
+        const centerPlat = new THREE.Mesh(new THREE.BoxGeometry(cSize, stageHeight, cSize), stageFloorMat);
+        centerPlat.position.y = stageHeight/2;
+        realStage.add(centerPlat);
+
+        // 3.2 Floating Light Rig (The hollow square above center)
+        const rigGeo = new THREE.EdgesGeometry(new THREE.BoxGeometry(cSize-2, 4, cSize-2));
+        const rigMat = new THREE.LineBasicMaterial({ color: 0x00e5ff, linewidth: 2 });
+        const rig = new THREE.LineSegments(rigGeo, rigMat);
+        rig.position.y = stageHeight + 15;
+        realStage.add(rig);
+
+        // 3.3 The 4 Arms (Forming the 'X')
+        const armLen = 45;
+        const armWid = 10;
+        const endSize = 14;
+
+        for(let i=0; i<4; i++) {
+            const armGroup = new THREE.Group();
+            const angle = (i * Math.PI / 2) + Math.PI / 4; // 45, 135, 225, 315 degrees
+            
+            // Walkway
+            const walkway = new THREE.Mesh(new THREE.BoxGeometry(armLen, stageHeight, armWid), stageFloorMat);
+            walkway.position.set(armLen/2 + cSize/2 - 1, stageHeight/2, 0);
+            armGroup.add(walkway);
+            
+            // Cyan Edge Lights
+            const edge1 = new THREE.Mesh(new THREE.BoxGeometry(armLen, 0.4, 0.4), cyanNeon);
+            edge1.position.set(armLen/2 + cSize/2 - 1, stageHeight, armWid/2 - 0.2);
+            armGroup.add(edge1);
+            const edge2 = new THREE.Mesh(new THREE.BoxGeometry(armLen, 0.4, 0.4), cyanNeon);
+            edge2.position.set(armLen/2 + cSize/2 - 1, stageHeight, -armWid/2 + 0.2);
+            armGroup.add(edge2);
+
+            // Massive LED Screens (Angled slightly outwards forming the inner cross)
+            const scLen = 28;
+            const scHei = 14;
+            const screen = new THREE.Mesh(new THREE.BoxGeometry(scLen, scHei, 1.5), screenMatBg);
+            // Position screens along the arm
+            screen.position.set(scLen/2 + cSize/2 + 2, stageHeight + scHei/2, armWid/2 + 0.5);
+            screen.rotation.y = -0.15; // Angle it like a V
+            
+            // White graphic pattern on screen
+            const graphic = new THREE.Mesh(new THREE.BoxGeometry(scLen * 0.6, scHei * 0.4, 2), screenMatFg);
+            graphic.position.copy(screen.position);
+            graphic.rotation.copy(screen.rotation);
+            
+            // Add screens to 2 sides if needed, but drone shot shows them mainly on one edge per arm forming a continuous wall
+            armGroup.add(screen);
+            armGroup.add(graphic);
+            
+            // End Stage (Square at tip)
+            const endStage = new THREE.Mesh(new THREE.BoxGeometry(endSize, stageHeight, endSize*1.2), stageFloorMat);
+            endStage.position.set(armLen + cSize/2 + endSize/2 - 1, stageHeight/2, 0);
+            armGroup.add(endStage);
+
+            // End Stage neon
+            const endEdge = new THREE.LineSegments(
+                new THREE.EdgesGeometry(new THREE.BoxGeometry(endSize, stageHeight+0.1, endSize*1.2)), 
+                new THREE.LineBasicMaterial({ color: 0x8a2be2 })
+            );
+            endEdge.position.copy(endStage.position);
+            armGroup.add(endEdge);
+
+            armGroup.rotation.y = angle;
+            realStage.add(armGroup);
+        }
+        
+        scene.add(realStage); // Add directly to scene so it doesn't get stretched into oval
+
+        // --- 4. Stadium Seating (Scaled up to fit the massive stage) ---
         const TIER_CONFIG = {
             VIP: { color: 0xb53bb5, price: '7,800', prefix: 'V' },
             RED: { color: 0xff1a1a, price: '6,800', prefix: 'A' },
@@ -229,303 +225,157 @@
         };
 
         const stadiumGroup = new THREE.Group();
-        const OVAL_SCALE_Z = 1.4; // For making the stadium oval shape
+        const OVAL_SCALE_Z = 1.3;
 
-        // Helper to create a Canvas-based text sprite for Zone Labels
         function createTextSprite(message, fontColor = "white") {
             const canvas = document.createElement('canvas');
             const context = canvas.getContext('2d');
-            canvas.width = 256;
-            canvas.height = 128;
-            
+            canvas.width = 256; canvas.height = 128;
             context.font = "Bold 56px Montserrat, Kanit, sans-serif";
             context.fillStyle = fontColor;
-            context.textAlign = "center";
-            context.textBaseline = "middle";
-            
-            // Strong shadow for contrast
+            context.textAlign = "center"; context.textBaseline = "middle";
             context.shadowColor = "rgba(0, 0, 0, 1)";
-            context.shadowBlur = 10;
-            context.shadowOffsetX = 3;
-            context.shadowOffsetY = 3;
-            
+            context.shadowBlur = 10; context.shadowOffsetX = 3; context.shadowOffsetY = 3;
             context.fillText(message, 128, 64);
-            
             const texture = new THREE.CanvasTexture(canvas);
             const spriteMaterial = new THREE.SpriteMaterial({ map: texture, transparent: true });
             const sprite = new THREE.Sprite(spriteMaterial);
-            
-            // Scale sprite nicely
-            sprite.scale.set(12, 6, 1);
+            sprite.scale.set(16, 8, 1); // Made labels slightly bigger
             return sprite;
         }
 
-        // Helper to generate a curved 3D block for a seating zone
         function createZoneSegment(innerRadius, outerRadius, yBottom, height, angleStart, angleLength, config, zoneId) {
             const shape = new THREE.Shape();
             shape.absarc(0, 0, outerRadius, angleStart, angleStart + angleLength, false);
             shape.absarc(0, 0, innerRadius, angleStart + angleLength, angleStart, true);
-
-            const extrudeSettings = {
-                depth: height,
-                bevelEnabled: true,
-                bevelThickness: 0.5,
-                bevelSize: 0.5,
-                bevelSegments: 2,
-                curveSegments: 12
-            };
-
+            const extrudeSettings = { depth: height, bevelEnabled: true, bevelThickness: 0.5, bevelSize: 0.5, bevelSegments: 2, curveSegments: 12 };
             const geometry = new THREE.ExtrudeGeometry(shape, extrudeSettings);
             
-            // Rotate to lie flat, move up, AND scale Z here to make it oval
             geometry.rotateX(-Math.PI / 2);
             geometry.translate(0, yBottom, 0);
             geometry.scale(1, 1, OVAL_SCALE_Z);
 
             const material = new THREE.MeshStandardMaterial({
-                color: config.color,
-                roughness: 0.3,
-                metalness: 0.4,
-                transparent: true,
-                opacity: 0.85,
-                emissive: config.color,
-                emissiveIntensity: 0.1
+                color: config.color, roughness: 0.3, metalness: 0.4,
+                transparent: true, opacity: 0.85, emissive: config.color, emissiveIntensity: 0.1
             });
-
             const mesh = new THREE.Mesh(geometry, material);
             
-            // Wireframe overlay
             const edges = new THREE.EdgesGeometry(geometry);
-            const lineMat = new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.15 });
-            const line = new THREE.LineSegments(edges, lineMat);
+            const line = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color: xffffff, transparent: true, opacity: 0.15 }));
             mesh.add(line);
 
-            // Add Label (Text Sprite) specific to this zone
             const zoneName = `${config.prefix}${zoneId}`;
-            // If background is Yellow, use black text for better contrast, else white
             const textColor = config.prefix === 'Y' ? "black" : "white";
             const labelSprite = createTextSprite(zoneName, textColor);
             
-            // Calculate label position at the center of the arc
             const midAngle = angleStart + (angleLength / 2);
             const midRadius = (innerRadius + outerRadius) / 2;
-            
-            // Local coordinates (Z is negated because rotateX(-90) makes Y go into -Z)
             const labelX = Math.cos(midAngle) * midRadius;
             const labelZ = -Math.sin(midAngle) * midRadius * OVAL_SCALE_Z; 
-            const labelY = yBottom + height + 1.5; // Hover above block
+            const labelY = yBottom + height + 2; 
             
             labelSprite.position.set(labelX, labelY, labelZ);
-            mesh.add(labelSprite); // Add to mesh so it moves when mesh is hovered
+            labelSprite.userData.isLabel = true;
+            mesh.add(labelSprite);
 
-            mesh.userData = {
-                name: `Zone ${zoneName}`,
-                price: config.price,
-                colorHex: config.color,
-                originalEmissive: material.emissive.getHex()
-            };
-
+            mesh.userData = { name: `Zone ${zoneName}`, price: config.price, colorHex: config.color, originalEmissive: material.emissive.getHex() };
             return mesh;
         }
 
-        // --- 4. Build Stadium Geometry ---
-        const GAP = 0.04;
+        // --- Adjusting Radii for Massive Stage ---
+        // The stage max radius is approx 75 units. So seating starts at 80.
+        const GAP = 0.03;
 
-        // Layer 0: Ground Field (VIP & RED)
+        // VIP (Ground)
         const totalVip = 16;
         for(let i=0; i<totalVip; i++) {
-            const angleLength = (Math.PI * 2) / totalVip - GAP;
-            const angleStart = i * ((Math.PI * 2) / totalVip);
-            const mesh = createZoneSegment(12, 28, 0, 1, angleStart, angleLength, TIER_CONFIG.VIP, i+1);
-            stadiumGroup.add(mesh);
+            stadiumGroup.add(createZoneSegment(75, 95, 0, 1, i * ((Math.PI * 2) / totalVip), ((Math.PI * 2) / totalVip) - GAP, TIER_CONFIG.VIP, i+1));
         }
-
+        // RED (Ground)
         const totalRed = 24;
         for(let i=0; i<totalRed; i++) {
-            const angleLength = (Math.PI * 2) / totalRed - GAP;
-            const angleStart = i * ((Math.PI * 2) / totalRed);
-            const mesh = createZoneSegment(30, 45, 0, 1, angleStart, angleLength, TIER_CONFIG.RED, i+1);
-            stadiumGroup.add(mesh);
+            stadiumGroup.add(createZoneSegment(98, 120, 0, 1, i * ((Math.PI * 2) / totalRed), ((Math.PI * 2) / totalRed) - GAP, TIER_CONFIG.RED, i+1));
         }
-
-        // Layer 1: Lower Stands (BLUE)
+        // BLUE (Tier 1)
         const totalBlue = 28;
         for(let i=0; i<totalBlue; i++) {
-            const angleLength = (Math.PI * 2) / totalBlue - GAP;
-            const angleStart = i * ((Math.PI * 2) / totalBlue);
-            const mesh = createZoneSegment(48, 62, 2, 8, angleStart, angleLength, TIER_CONFIG.BLUE, i+1);
-            stadiumGroup.add(mesh);
+            stadiumGroup.add(createZoneSegment(123, 140, 2, 8, i * ((Math.PI * 2) / totalBlue), ((Math.PI * 2) / totalBlue) - GAP, TIER_CONFIG.BLUE, i+1));
         }
-
-        // Layer 2: Middle Stands (YELLOW)
+        // YELLOW (Tier 2)
         const totalYellow = 32;
         for(let i=0; i<totalYellow; i++) {
-            const angleLength = (Math.PI * 2) / totalYellow - GAP;
-            const angleStart = i * ((Math.PI * 2) / totalYellow);
-            const mesh = createZoneSegment(65, 80, 10, 12, angleStart, angleLength, TIER_CONFIG.YELLOW, i+1);
-            stadiumGroup.add(mesh);
+            stadiumGroup.add(createZoneSegment(143, 160, 10, 12, i * ((Math.PI * 2) / totalYellow), ((Math.PI * 2) / totalYellow) - GAP, TIER_CONFIG.YELLOW, i+1));
         }
-
-        // Layer 3: Upper Stands (GREEN & TEAL)
+        // GREEN & TEAL (Tier 3)
         const totalSide = 12;
-        
-        // East Side arc
-        const eastStart = -Math.PI / 4;
-        const eastSpan = Math.PI / 2;
+        const eastStart = -Math.PI / 4, eastSpan = Math.PI / 2;
         for(let i=0; i<totalSide; i++) {
-            const angleLength = eastSpan / totalSide - (GAP/2);
             const angleStart = eastStart + (i * (eastSpan / totalSide));
-            stadiumGroup.add(createZoneSegment(83, 95, 22, 14, angleStart, angleLength, TIER_CONFIG.GREEN, i+1));
-            stadiumGroup.add(createZoneSegment(97, 108, 36, 16, angleStart, angleLength, TIER_CONFIG.TEAL, i+1));
+            stadiumGroup.add(createZoneSegment(163, 180, 22, 14, angleStart, eastSpan / totalSide - (GAP/2), TIER_CONFIG.GREEN, i+1));
+            stadiumGroup.add(createZoneSegment(183, 195, 36, 16, angleStart, eastSpan / totalSide - (GAP/2), TIER_CONFIG.TEAL, i+1));
         }
-
-        // West Side arc
-        const westStart = Math.PI * 0.75;
-        const westSpan = Math.PI / 2;
+        const westStart = Math.PI * 0.75, westSpan = Math.PI / 2;
         for(let i=0; i<totalSide; i++) {
-            const angleLength = westSpan / totalSide - (GAP/2);
             const angleStart = westStart + (i * (westSpan / totalSide));
-            stadiumGroup.add(createZoneSegment(83, 95, 22, 14, angleStart, angleLength, TIER_CONFIG.GREEN, i+totalSide+1));
-            stadiumGroup.add(createZoneSegment(97, 108, 36, 16, angleStart, angleLength, TIER_CONFIG.TEAL, i+totalSide+1));
+            stadiumGroup.add(createZoneSegment(163, 180, 22, 14, angleStart, westSpan / totalSide - (GAP/2), TIER_CONFIG.GREEN, i+totalSide+1));
+            stadiumGroup.add(createZoneSegment(183, 195, 36, 16, angleStart, westSpan / totalSide - (GAP/2), TIER_CONFIG.TEAL, i+totalSide+1));
         }
 
-        // --- 5. Build Stage ---
-        const stageMat = new THREE.MeshStandardMaterial({ color: 0xffffff, emissive: 0x444444 });
-        const stageCenter = new THREE.Mesh(new THREE.CylinderGeometry(8, 8, 2, 32), stageMat);
-        stadiumGroup.add(stageCenter);
-
-        const runwayMat = new THREE.MeshStandardMaterial({ color: 0xcccccc });
-        const runwayGeo1 = new THREE.BoxGeometry(40, 1.5, 4);
-        const runway1 = new THREE.Mesh(runwayGeo1, runwayMat);
-        runway1.rotation.y = Math.PI / 4;
-        stadiumGroup.add(runway1);
-
-        const runwayGeo2 = new THREE.BoxGeometry(40, 1.5, 4);
-        const runway2 = new THREE.Mesh(runwayGeo2, runwayMat);
-        runway2.rotation.y = -Math.PI / 4;
-        stadiumGroup.add(runway2);
-
-        // Ground Floor decoration (Inner field)
-        const groundGeo = new THREE.PlaneGeometry(300, 300);
+        // Ground Floor decoration
+        const groundGeo = new THREE.PlaneGeometry(500, 500);
         groundGeo.scale(1, OVAL_SCALE_Z, 1);
-        const groundMat = new THREE.MeshStandardMaterial({ 
-            color: 0x111111, roughness: 0.8, transparent: true, opacity: 0.5
-        });
-        const ground = new THREE.Mesh(groundGeo, groundMat);
-        ground.rotation.x = -Math.PI / 2;
-        ground.position.y = -1;
+        const ground = new THREE.Mesh(groundGeo, new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.8, transparent: true, opacity: 0.5 }));
+        ground.rotation.x = -Math.PI / 2; ground.position.y = -1;
         stadiumGroup.add(ground);
 
         scene.add(stadiumGroup);
 
-        // --- 6. 3D Articulated Human Models (BTS Members) ---
-        const btsMembers = [];
+        // --- 5. 3D BTS Members (Sprites from Image) ---
         const btsGroup = new THREE.Group();
-        
-        function create3DHuman(index) {
-            const human = new THREE.Group();
-            
-            // Materials
-            const skinMat = new THREE.MeshStandardMaterial({ color: 0xffe0bd, roughness: 0.4 }); // Skin tone
-            const suitMat = new THREE.MeshStandardMaterial({ color: 0x1a1a1a, roughness: 0.7 }); // Black Suit
-            const hairMat = new THREE.MeshStandardMaterial({ color: 0x050505, roughness: 0.9 }); // Dark Hair
-            const micMat  = new THREE.MeshStandardMaterial({ color: 0x888888, metalness: 0.8, roughness: 0.2 });
+        const textureLoader = new THREE.TextureLoader();
+        const btsTexture = textureLoader.load('353340C5-FABD-457B-877D-C63AEA66FCF4.png');
 
-            // Base sizes
-            const headGeo = new THREE.BoxGeometry(0.6, 0.6, 0.6);
-            const hairGeo = new THREE.BoxGeometry(0.65, 0.2, 0.65);
-            const torsoGeo = new THREE.BoxGeometry(0.9, 1.3, 0.4);
-            const armGeo = new THREE.BoxGeometry(0.25, 1.1, 0.25);
-            const legGeo = new THREE.BoxGeometry(0.3, 1.3, 0.3);
-            const micGeo = new THREE.CylinderGeometry(0.04, 0.04, 0.4, 8);
+        function createBTSSprite(index, total) {
+            // Clone the texture so each sprite can have a different offset
+            const texture = btsTexture.clone();
+            texture.needsUpdate = true;
+            // The image has 7 members, so we repeat 1/7th of the image horizontally
+            texture.repeat.set(1 / total, 1);
+            // Offset the texture to show the correct member based on index
+            texture.offset.x = index / total;
 
-            // Constructing the body parts hierarchically for animation
-            const torso = new THREE.Mesh(torsoGeo, suitMat);
-            torso.position.y = 1.3; // Elevate to hip height
+            const material = new THREE.SpriteMaterial({ map: texture, transparent: true });
+            const sprite = new THREE.Sprite(material);
 
-            const headGroup = new THREE.Group();
-            headGroup.position.y = 0.65 + 0.3; // Top of torso + half head
-            const head = new THREE.Mesh(headGeo, skinMat);
-            const hair = new THREE.Mesh(hairGeo, hairMat);
-            hair.position.y = 0.3;
-            headGroup.add(head);
-            headGroup.add(hair);
-            torso.add(headGroup);
+            // Scale the sprite to be proportional to a human size
+            // Adjust these values to change the size of the members
+            const spriteWidth = 4;
+            const spriteHeight = 6;
+            sprite.scale.set(spriteWidth, spriteHeight, 1);
 
-            // Right Arm (Holding Mic)
-            const rightArmGroup = new THREE.Group();
-            rightArmGroup.position.set(0.55, 0.5, 0); // Shoulder joint
-            const rightArm = new THREE.Mesh(armGeo, suitMat);
-            rightArm.position.y = -0.55; // Hang down from pivot
-            rightArmGroup.add(rightArm);
-            
-            const mic = new THREE.Mesh(micGeo, micMat);
-            mic.position.set(0, -1.0, 0.2); // Hand position
-            mic.rotation.x = Math.PI / 2;
-            rightArmGroup.add(mic);
-            torso.add(rightArmGroup);
+            // Position them on the stage, spread out
+            const spacing = 3;
+            const xOffset = (index - (total - 1) / 2) * spacing;
+            sprite.position.set(xOffset, stageHeight + spriteHeight / 2, -2);
 
-            // Left Arm (Dancing)
-            const leftArmGroup = new THREE.Group();
-            leftArmGroup.position.set(-0.55, 0.5, 0); // Shoulder joint
-            const leftArm = new THREE.Mesh(armGeo, suitMat);
-            leftArm.position.y = -0.55;
-            leftArmGroup.add(leftArm);
-            torso.add(leftArmGroup);
-
-            // Legs
-            const rightLegGroup = new THREE.Group();
-            rightLegGroup.position.set(0.2, -0.65, 0); // Hip joint
-            const rightLeg = new THREE.Mesh(legGeo, suitMat);
-            rightLeg.position.y = -0.65;
-            rightLegGroup.add(rightLeg);
-            torso.add(rightLegGroup);
-
-            const leftLegGroup = new THREE.Group();
-            leftLegGroup.position.set(-0.2, -0.65, 0);
-            const leftLeg = new THREE.Mesh(legGeo, suitMat);
-            leftLeg.position.y = -0.65;
-            leftLegGroup.add(leftLeg);
-            torso.add(leftLegGroup);
-
-            human.add(torso);
-            
-            // Arrangement on stage (V-Formation facing +Z)
-            const spacing = 1.8;
-            const offset = (index - 3) * spacing;
-            human.position.x = offset;
-            human.position.z = -Math.abs(offset) * 0.5;
-            human.position.y = 1.5; // On top of stage cylinder
-
-            btsGroup.add(human);
-
-            return {
-                root: human,
-                torso: torso,
-                head: headGroup,
-                rightArm: rightArmGroup,
-                leftArm: leftArmGroup,
-                rightLeg: rightLegGroup,
-                leftLeg: leftLegGroup,
-                animSeed: Math.random() * Math.PI * 2
-            };
+            return sprite;
         }
 
+        // Create a sprite for each of the 7 members
         for (let i = 0; i < 7; i++) {
-            btsMembers.push(create3DHuman(i));
+            btsGroup.add(createBTSSprite(i, 7));
         }
-        stadiumGroup.add(btsGroup);
+        scene.add(btsGroup);
 
-        // --- 7. Interaction / Raycaster ---
+        // --- 6. Interaction ---
         const raycaster = new THREE.Raycaster();
         const mouse = new THREE.Vector2();
         let hoveredMesh = null;
-        
         const tooltip = document.getElementById('tooltip');
         const ttZone = document.getElementById('tt-zone');
         const ttPrice = document.getElementById('tt-price');
 
-        // Only intersect with main block meshes (not sprites or lines)
         const interactableMeshes = [];
         stadiumGroup.traverse((child) => {
             if(child.isMesh && child.userData.name && !child.userData.isLabel) {
@@ -533,69 +383,52 @@
             }
         });
 
-        // Combined interaction handler for both mouse and touch
         function handleInteraction(event) {
             let clientX, clientY;
-            
             if (event.changedTouches) {
-                clientX = event.changedTouches[0].clientX;
-                clientY = event.changedTouches[0].clientY;
+                clientX = event.changedTouches[0].clientX; clientY = event.changedTouches[0].clientY;
             } else {
-                clientX = event.clientX;
-                clientY = event.clientY;
+                clientX = event.clientX; clientY = event.clientY;
             }
-
-            mouse.x = (clientX / window.innerWidth) * 2 - 1;
-            mouse.y = -(clientY / window.innerHeight) * 2 + 1;
-
-            tooltip.style.left = clientX + 'px';
-            tooltip.style.top = clientY + 'px';
-            
-            // ลบ controls.autoRotate = false ออก เพราะปิดถาวรแล้ว
+            mouse.x = (clientX / window.innerWidth) * 2 - 1; mouse.y = -(clientY / window.innerHeight) * 2 + 1;
+            tooltip.style.left = clientX + 'px'; tooltip.style.top = clientY + 'px';
         }
 
         window.addEventListener('pointermove', handleInteraction);
         window.addEventListener('touchstart', handleInteraction, { passive: true });
         window.addEventListener('touchmove', handleInteraction, { passive: true });
 
-        // ลบ Event pointerleave ที่คอยเปิด autoRotate ทิ้งไป
-        
         window.addEventListener('touchend', () => {
-            // ลบ controls.autoRotate = true ทิ้งไป
-            // Hide tooltip when touch ends
             setTimeout(() => {
                 if(hoveredMesh) {
                     hoveredMesh.material.emissive.setHex(hoveredMesh.userData.originalEmissive);
-                    hoveredMesh.position.y -= 1;
+                    hoveredMesh.position.y -= 2;
                     hoveredMesh = null;
                     tooltip.style.opacity = 0;
                 }
             }, 1500);
         });
 
-        // --- 8. Animation Loop ---
+        // --- 7. Animation Loop ---
         const clock = new THREE.Clock();
 
         function animate() {
             requestAnimationFrame(animate);
-
             const time = clock.getElapsedTime();
 
-            // Hover Logic
             raycaster.setFromCamera(mouse, camera);
             const intersects = raycaster.intersectObjects(interactableMeshes);
 
             if (intersects.length > 0) {
                 const object = intersects[0].object;
-                
                 if (hoveredMesh !== object) {
                     if (hoveredMesh) {
                         hoveredMesh.material.emissive.setHex(hoveredMesh.userData.originalEmissive);
-                        hoveredMesh.position.y -= 1; 
+                        hoveredMesh.position.y -= 2; 
                     }
                     hoveredMesh = object;
                     hoveredMesh.material.emissive.setHex(0xffffff);
-                    hoveredMesh.position.y += 1; // Block and Label pop up together
+                    hoveredMesh.position.y += 2; 
 
                     ttZone.innerText = hoveredMesh.userData.name.replace('Zone ', '');
                     ttPrice.innerText = hoveredMesh.userData.price + " THB";
@@ -605,73 +438,32 @@
             } else {
                 if (hoveredMesh) {
                     hoveredMesh.material.emissive.setHex(hoveredMesh.userData.originalEmissive);
-                    hoveredMesh.position.y -= 1;
+                    hoveredMesh.position.y -= 2;
                     hoveredMesh = null;
                     tooltip.style.opacity = 0;
                 }
             }
 
-            // Lights
-            stageLight.intensity = 1.5 + Math.sin(time * 3) * 0.5;
-            purpleGlow.intensity = 2 + Math.cos(time * 2) * 1;
-
-            // Animate 3D Human Models (Singing & Dancing)
-            const danceSpeed = time * 4;
-            btsMembers.forEach(m => {
-                // Bobbing up and down
-                m.root.position.y = 1.5 + Math.abs(Math.sin(danceSpeed + m.animSeed)) * 0.15;
-                
-                // Head bopping
-                m.head.rotation.x = Math.sin(danceSpeed * 0.5 + m.animSeed) * 0.1;
-                m.head.rotation.y = Math.sin(danceSpeed * 0.25 + m.animSeed) * 0.2;
-
-                // Holding Mic (Right Arm) - Bent upwards
-                m.rightArm.rotation.x = -Math.PI / 2.5 + Math.sin(danceSpeed + m.animSeed) * 0.1;
-                m.rightArm.rotation.z = 0.1;
-
-                // Dancing Left Arm - Swinging
-                m.leftArm.rotation.x = Math.sin(danceSpeed * 0.5 + m.animSeed) * 0.4;
-                m.leftArm.rotation.z = Math.cos(danceSpeed * 0.5 + m.animSeed) * 0.2 - 0.1;
-
-                // Torso twisting slightly
-                m.torso.rotation.y = Math.sin(danceSpeed * 0.25 + m.animSeed) * 0.15;
-                
-                // Legs stepping
-                m.leftLeg.rotation.x = Math.sin(danceSpeed + m.animSeed) * 0.2;
-                m.rightLeg.rotation.x = Math.cos(danceSpeed + m.animSeed) * 0.2;
-            });
-
             controls.update();
             renderer.render(scene, camera);
         }
 
-        window.addEventListener('resize', onWindowResize, false);
-        function onWindowResize() {
+        window.addEventListener('resize', () => {
             camera.aspect = window.innerWidth / window.innerHeight;
             camera.updateProjectionMatrix();
             renderer.setSize(window.innerWidth, window.innerHeight);
-            
-            // Adjust camera zoom dynamically if resizing window between mobile/desktop widths
-            if (window.innerWidth < 768 && camera.position.z < 250) {
-                camera.position.z = 320;
-            } else if (window.innerWidth >= 768 && camera.position.z > 250 && camera.position.z === 320) {
-                camera.position.z = 220;
-            }
-        }
+            if (window.innerWidth < 768 && camera.position.z < 350) camera.position.z = 450;
+            else if (window.innerWidth >= 768 && camera.position.z > 350 && camera.position.z === 450) camera.position.z = 350;
+        }, false);
 
         window.onload = () => {
             setTimeout(() => {
                 document.getElementById('loading').style.opacity = '0';
-                setTimeout(() => {
-                    document.getElementById('loading').style.display = 'none';
-                }, 500);
+                setTimeout(() => document.getElementById('loading').style.display = 'none', 500);
                 animate();
             }, 1000);
         };
-
     </script>
 </body>
 </html>
-
-
 
