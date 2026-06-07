@@ -11,7 +11,7 @@
     <style>
         body { margin: 0; overflow: hidden; font-family: 'Kanit', sans-serif; background-color: #050505; }
         #canvas-container { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 1; }
-        .ui-layer { position: absolute; z-index: 10; }
+        .ui-layer { position: absolute; z-index: 10; pointer-events: none; }
         .interactive-panel {
             pointer-events: auto; backdrop-filter: blur(10px);
             background: rgba(15, 15, 20, 0.7); border: 1px solid rgba(255, 255, 255, 0.1);
@@ -26,7 +26,7 @@
         .loading {
             position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: #050505;
             display: flex; justify-content: center; align-items: center; z-index: 50;
-            color: white; transition: opacity 0.5s;
+            color: white; transition: opacity 0.5s; pointer-events: auto;
         }
     </style>
 </head>
@@ -35,7 +35,7 @@
     <div id="loading" class="loading flex-col">
         <div class="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-fuchsia-500 mb-4"></div>
         <h2 class="text-2xl font-bold tracking-widest font-['Montserrat']">GENERATING 3D MAP</h2>
-        <p class="text-gray-400 mt-2">กำลังจำลองเวทีและศิลปิน...</p>
+        <p class="text-gray-400 mt-2">กำลังจำลองเวที LED และโมเดลศิลปิน 3D...</p>
     </div>
 
     <div id="canvas-container"></div>
@@ -47,7 +47,7 @@
     </div>
 
     <!-- Header UI -->
-    <div class="ui-layer top-4 left-4 sm:top-6 sm:left-6 transform scale-[0.35] sm:scale-[0.4] md:scale-50 origin-top-left pointer-events-none">
+    <div class="ui-layer top-4 left-4 sm:top-6 sm:left-6 transform scale-[0.35] sm:scale-[0.4] md:scale-50 origin-top-left">
         <div class="flex flex-col items-center">
             <div class="flex flex-col items-center space-y-2 font-['Montserrat'] font-black text-[#0f0f15] drop-shadow-[0_0_20px_rgba(255,255,255,0.4)]">
                 <div class="bg-[#ff1a1a] px-4 md:px-6 py-1 transform -rotate-2"><span class="text-3xl md:text-5xl tracking-widest">BTS</span></div>
@@ -118,19 +118,19 @@
         const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
         scene.add(ambientLight);
 
-        const stageLight = new THREE.PointLight(0xffffff, 1.8, 200);
-        stageLight.position.set(0, 15, 0);
+        const stageLight = new THREE.PointLight(0xffffff, 2.0, 200);
+        stageLight.position.set(0, 20, 0);
         scene.add(stageLight);
 
-        const purpleGlow = new THREE.PointLight(0xb53bb5, 2, 150);
-        purpleGlow.position.set(0, 20, 0);
+        const purpleGlow = new THREE.PointLight(0xb53bb5, 2.5, 150);
+        purpleGlow.position.set(0, 25, 0);
         scene.add(purpleGlow);
 
         const dirLight = new THREE.DirectionalLight(0x3B82F6, 0.6);
         dirLight.position.set(100, 100, 50);
         scene.add(dirLight);
 
-        // --- 3. Data & Config ---
+        // --- 3. Stadium Generation (Fast Load) ---
         const TIER_CONFIG = {
             VIP: { color: 0xb53bb5, price: '7,800', prefix: 'V' },
             RED: { color: 0xff1a1a, price: '6,800', prefix: 'A' },
@@ -147,13 +147,11 @@
             const canvas = document.createElement('canvas');
             const context = canvas.getContext('2d');
             canvas.width = 128; canvas.height = 64;
-            
             context.font = "Bold 28px Montserrat, Kanit, sans-serif";
             context.fillStyle = fontColor;
             context.textAlign = "center"; context.textBaseline = "middle";
             context.shadowColor = "rgba(0, 0, 0, 1)";
             context.shadowBlur = 5; context.shadowOffsetX = 2; context.shadowOffsetY = 2;
-            
             context.fillText(message, 64, 32);
             
             const texture = new THREE.CanvasTexture(canvas);
@@ -170,101 +168,108 @@
             const extrudeSettings = { depth: height, bevelEnabled: true, bevelThickness: 0.5, bevelSize: 0.5, bevelSegments: 1, curveSegments: 4 };
             const geometry = new THREE.ExtrudeGeometry(shape, extrudeSettings);
             
-            geometry.rotateX(-Math.PI / 2);
-            geometry.translate(0, yBottom, 0);
-            geometry.scale(1, 1, OVAL_SCALE_Z);
+            geometry.rotateX(-Math.PI / 2); geometry.translate(0, yBottom, 0); geometry.scale(1, 1, OVAL_SCALE_Z);
 
             const material = new THREE.MeshStandardMaterial({
                 color: config.color, roughness: 0.3, metalness: 0.4,
                 transparent: true, opacity: 0.85, emissive: config.color, emissiveIntensity: 0.1
             });
             const mesh = new THREE.Mesh(geometry, material);
-            
             const edges = new THREE.EdgesGeometry(geometry);
-            const line = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.15 }));
-            mesh.add(line);
+            mesh.add(new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.15 })));
 
-            const zoneName = `${config.prefix}${zoneId}`;
-            const textColor = config.prefix === 'Y' ? "black" : "white";
-            const labelSprite = createTextSprite(zoneName, textColor);
-            
+            const labelSprite = createTextSprite(`${config.prefix}${zoneId}`, config.prefix === 'Y' ? "black" : "white");
             const midAngle = angleStart + (angleLength / 2);
             const midRadius = (innerRadius + outerRadius) / 2;
-            const labelX = Math.cos(midAngle) * midRadius;
-            const labelZ = -Math.sin(midAngle) * midRadius * OVAL_SCALE_Z; 
-            const labelY = yBottom + height + 1.5; 
-            
-            labelSprite.position.set(labelX, labelY, labelZ);
+            labelSprite.position.set(Math.cos(midAngle) * midRadius, yBottom + height + 1.5, -Math.sin(midAngle) * midRadius * OVAL_SCALE_Z);
             labelSprite.userData.isLabel = true;
             mesh.add(labelSprite);
 
-            mesh.userData = { name: `Zone ${zoneName}`, price: config.price, colorHex: config.color, originalEmissive: material.emissive.getHex() };
+            mesh.userData = { name: `Zone ${config.prefix}${zoneId}`, price: config.price, colorHex: config.color, originalEmissive: material.emissive.getHex() };
             return mesh;
         }
 
-        // --- 4. Build Stadium Geometry (Fast Load Structure) ---
         const GAP = 0.04;
-
-        const totalVip = 16;
-        for(let i=0; i<totalVip; i++) stadiumGroup.add(createZoneSegment(14, 28, 0, 1, i * ((Math.PI * 2) / totalVip), ((Math.PI * 2) / totalVip) - GAP, TIER_CONFIG.VIP, i+1));
-        const totalRed = 24;
-        for(let i=0; i<totalRed; i++) stadiumGroup.add(createZoneSegment(30, 45, 0, 1, i * ((Math.PI * 2) / totalRed), ((Math.PI * 2) / totalRed) - GAP, TIER_CONFIG.RED, i+1));
-        const totalBlue = 28;
-        for(let i=0; i<totalBlue; i++) stadiumGroup.add(createZoneSegment(48, 62, 2, 8, i * ((Math.PI * 2) / totalBlue), ((Math.PI * 2) / totalBlue) - GAP, TIER_CONFIG.BLUE, i+1));
-        const totalYellow = 32;
-        for(let i=0; i<totalYellow; i++) stadiumGroup.add(createZoneSegment(65, 80, 10, 12, i * ((Math.PI * 2) / totalYellow), ((Math.PI * 2) / totalYellow) - GAP, TIER_CONFIG.YELLOW, i+1));
+        const totalVip = 16; for(let i=0; i<totalVip; i++) stadiumGroup.add(createZoneSegment(14, 28, 0, 1, i * ((Math.PI * 2) / totalVip), ((Math.PI * 2) / totalVip) - GAP, TIER_CONFIG.VIP, i+1));
+        const totalRed = 24; for(let i=0; i<totalRed; i++) stadiumGroup.add(createZoneSegment(30, 45, 0, 1, i * ((Math.PI * 2) / totalRed), ((Math.PI * 2) / totalRed) - GAP, TIER_CONFIG.RED, i+1));
+        const totalBlue = 28; for(let i=0; i<totalBlue; i++) stadiumGroup.add(createZoneSegment(48, 62, 2, 8, i * ((Math.PI * 2) / totalBlue), ((Math.PI * 2) / totalBlue) - GAP, TIER_CONFIG.BLUE, i+1));
+        const totalYellow = 32; for(let i=0; i<totalYellow; i++) stadiumGroup.add(createZoneSegment(65, 80, 10, 12, i * ((Math.PI * 2) / totalYellow), ((Math.PI * 2) / totalYellow) - GAP, TIER_CONFIG.YELLOW, i+1));
         
         const totalSide = 12;
         const eastStart = -Math.PI / 4, eastSpan = Math.PI / 2;
-        for(let i=0; i<totalSide; i++) {
-            const angleStart = eastStart + (i * (eastSpan / totalSide));
-            stadiumGroup.add(createZoneSegment(83, 95, 22, 14, angleStart, eastSpan / totalSide - (GAP/2), TIER_CONFIG.GREEN, i+1));
-            stadiumGroup.add(createZoneSegment(97, 108, 36, 16, angleStart, eastSpan / totalSide - (GAP/2), TIER_CONFIG.TEAL, i+1));
-        }
         const westStart = Math.PI * 0.75, westSpan = Math.PI / 2;
         for(let i=0; i<totalSide; i++) {
-            const angleStart = westStart + (i * (westSpan / totalSide));
-            stadiumGroup.add(createZoneSegment(83, 95, 22, 14, angleStart, westSpan / totalSide - (GAP/2), TIER_CONFIG.GREEN, i+totalSide+1));
-            stadiumGroup.add(createZoneSegment(97, 108, 36, 16, angleStart, westSpan / totalSide - (GAP/2), TIER_CONFIG.TEAL, i+totalSide+1));
+            stadiumGroup.add(createZoneSegment(83, 95, 22, 14, eastStart + (i * (eastSpan / totalSide)), eastSpan / totalSide - (GAP/2), TIER_CONFIG.GREEN, i+1));
+            stadiumGroup.add(createZoneSegment(97, 108, 36, 16, eastStart + (i * (eastSpan / totalSide)), eastSpan / totalSide - (GAP/2), TIER_CONFIG.TEAL, i+1));
+            stadiumGroup.add(createZoneSegment(83, 95, 22, 14, westStart + (i * (westSpan / totalSide)), westSpan / totalSide - (GAP/2), TIER_CONFIG.GREEN, i+totalSide+1));
+            stadiumGroup.add(createZoneSegment(97, 108, 36, 16, westStart + (i * (westSpan / totalSide)), westSpan / totalSide - (GAP/2), TIER_CONFIG.TEAL, i+totalSide+1));
         }
 
-        // พื้นสนามสีดำ
         const groundGeo = new THREE.PlaneGeometry(300, 300);
         groundGeo.scale(1, OVAL_SCALE_Z, 1);
         const ground = new THREE.Mesh(groundGeo, new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.8, transparent: true, opacity: 0.5 }));
         ground.rotation.x = -Math.PI / 2; ground.position.y = -1;
         stadiumGroup.add(ground);
-
         scene.add(stadiumGroup);
 
-        // --- 5. Build Stage (White X-Shape Layout ตรงตามไฟล์ภาพ) ---
+        // --- 4. Build Stage (White X-Shape + LED Screens + Neon) ---
         const realStage = new THREE.Group();
         const stageHeight = 1.2;
-        // สีขาวนวลๆ ให้ความรู้สึกเป็นเวที
-        const stageMat = new THREE.MeshStandardMaterial({ color: 0xf0f0f0, emissive: 0x333333, roughness: 0.4 });
+        
+        // วัสดุเวทีสีขาวนวล
+        const stageMat = new THREE.MeshStandardMaterial({ color: 0xffffff, emissive: 0x222222, roughness: 0.3 });
+        // วัสดุหน้าจอ LED และไฟนีออน
+        const screenMatBg = new THREE.MeshStandardMaterial({ color: 0x220000, emissive: 0x990022, emissiveIntensity: 1.0 });
+        const screenMatFg = new THREE.MeshStandardMaterial({ color: 0xffffff, emissive: 0xffffff, emissiveIntensity: 1.5 });
+        const cyanNeon = new THREE.MeshBasicMaterial({ color: 0x00ffff });
 
-        // 5.1 เวทีวงกลมหลักตรงกลาง (Main Center Stage)
+        // เวทีวงกลมหลักตรงกลาง
         const centerRadius = 8;
         const centerStage = new THREE.Mesh(new THREE.CylinderGeometry(centerRadius, centerRadius, stageHeight, 32), stageMat);
         centerStage.position.y = stageHeight / 2;
         realStage.add(centerStage);
 
-        // 5.2 ทางเดิน 4 แฉก และเวทีย่อยปลายทางเดิน (Arms & Sub-stages)
+        // โครงเหล็กลอยฟ้าเหนือเวที (Light Rig)
+        const rigGeo = new THREE.EdgesGeometry(new THREE.CylinderGeometry(centerRadius-1, centerRadius-1, 1.5, 16));
+        const rig = new THREE.LineSegments(rigGeo, new THREE.LineBasicMaterial({ color: 0x00ffff, linewidth: 2 }));
+        rig.position.y = stageHeight + 8;
+        realStage.add(rig);
+
+        // ทางเดิน 4 แฉก + จอ LED ด้านข้าง + เวทีย่อย
         const armLen = 16;
         const armWid = 3.5;
         const nodeRadius = 4;
 
         for (let i = 0; i < 4; i++) {
             const armGroup = new THREE.Group();
-            const angle = (i * Math.PI / 2) + Math.PI / 4; // 45, 135, 225, 315 องศา
+            const angle = (i * Math.PI / 2) + Math.PI / 4; 
 
-            // ทางเดินเชื่อม
+            // ทางเดินเชื่อมสีขาว
             const arm = new THREE.Mesh(new THREE.BoxGeometry(armLen, stageHeight, armWid), stageMat);
-            // เลื่อนออกไปจากจุดกึ่งกลาง
             arm.position.set((armLen/2) + (centerRadius/2) + 2, stageHeight/2, 0);
             armGroup.add(arm);
 
-            // เวทีย่อย (วงกลมเล็กตรงปลายทางเดิน)
+            // ไฟนีออนสีฟ้าที่ขอบทางเดิน
+            const edge1 = new THREE.Mesh(new THREE.BoxGeometry(armLen, 0.2, 0.2), cyanNeon);
+            edge1.position.set((armLen/2) + (centerRadius/2) + 2, stageHeight, armWid/2 - 0.1);
+            armGroup.add(edge1);
+            const edge2 = new THREE.Mesh(new THREE.BoxGeometry(armLen, 0.2, 0.2), cyanNeon);
+            edge2.position.set((armLen/2) + (centerRadius/2) + 2, stageHeight, -armWid/2 + 0.1);
+            armGroup.add(edge2);
+
+            // จอ LED เฉียงๆ ด้านข้างทางเดิน
+            const scLen = 8; const scHei = 3;
+            const screen = new THREE.Mesh(new THREE.BoxGeometry(scLen, scHei, 0.4), screenMatBg);
+            screen.position.set((scLen/2) + centerRadius + 2, stageHeight + scHei/2, armWid/2 + 0.4);
+            screen.rotation.y = -0.15; 
+            
+            // กราฟิกบนจอ LED
+            const graphic = new THREE.Mesh(new THREE.BoxGeometry(scLen * 0.7, scHei * 0.5, 0.5), screenMatFg);
+            graphic.position.copy(screen.position); graphic.rotation.copy(screen.rotation);
+            
+            armGroup.add(screen); armGroup.add(graphic);
+
+            // เวทีย่อย (ปลายทางเดิน)
             const node = new THREE.Mesh(new THREE.CylinderGeometry(nodeRadius, nodeRadius, stageHeight, 32), stageMat);
             node.position.set(armLen + centerRadius + 1, stageHeight/2, 0);
             armGroup.add(node);
@@ -272,45 +277,106 @@
             armGroup.rotation.y = angle;
             realStage.add(armGroup);
         }
-
         stadiumGroup.add(realStage);
 
-        // --- 5.1 3D BTS Members (ปรับ Aspect Ratio ให้สมส่วนเหมือนคนจริงๆ) ---
+        // --- 5. 3D BTS Members (จำลองจากภาพ 2569-06-07_12-56-00.png) ---
+        // ใช้ 3D Primitive ประกอบร่างเป็นคน เพื่อให้แน่ใจว่าโหลดติด 100% และปรับแต่งสีชุดได้ตามรูปอ้างอิง
+        const btsMembers = [];
         const btsGroup = new THREE.Group();
-        realStage.add(btsGroup);
+        
+        function createStyledHuman(index) {
+            const human = new THREE.Group();
+            
+            // วัสดุพื้นฐาน
+            const skinMat = new THREE.MeshStandardMaterial({ color: 0xffe0bd, roughness: 0.4 });
+            const suitMat = new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.7 }); // ชุดสูทสีดำ
+            const whiteMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.8 }); // เสื้อสีขาว/ผ้าพันคอ
+            
+            // จัดการสีผม (Jimin คนที่ 7 (index 6) ผมสีบลอนด์, นอกนั้นผมดำ)
+            const hairColor = (index === 6) ? 0xf5d061 : 0x1a1a1a;
+            const hairMat = new THREE.MeshStandardMaterial({ color: hairColor, roughness: 0.9 });
 
-        const textureLoader = new THREE.TextureLoader();
-        textureLoader.load(
-            '2569-06-07_12-56-00.png',
-            function(texture) {
-                // รอภาพโหลดเสร็จแล้วสร้าง Sprite 7 คน
-                for (let i = 0; i < 7; i++) {
-                    const tex = texture.clone();
-                    tex.needsUpdate = true;
-                    tex.repeat.set(1 / 7, 1);
-                    tex.offset.x = i / 7;
+            // ชิ้นส่วนร่างกาย
+            const headGeo = new THREE.BoxGeometry(0.5, 0.5, 0.5);
+            const hairGeo = new THREE.BoxGeometry(0.55, 0.2, 0.55);
+            const torsoGeo = new THREE.BoxGeometry(0.8, 1.2, 0.35);
+            const armGeo = new THREE.BoxGeometry(0.25, 1.0, 0.25);
+            const legGeo = new THREE.BoxGeometry(0.3, 1.2, 0.3);
 
-                    const material = new THREE.SpriteMaterial({ map: tex, transparent: true });
-                    const sprite = new THREE.Sprite(material);
+            const torso = new THREE.Mesh(torsoGeo, suitMat);
+            torso.position.y = 1.2; 
 
-                    // 💡 ปรับสัดส่วนให้เป็นคน (กว้างน้อย สูงมาก) จะดูเหมือนคนเดินดิน ไม่แบนเป็นกล่อง
-                    const sWidth = 2.2;
-                    const sHeight = 5.5;
-                    sprite.scale.set(sWidth, sHeight, 1);
-
-                    const spacing = 1.6;
-                    const xOffset = (i - 3) * spacing;
-                    // จัดตำแหน่งยืนบนเวทีตรงกลาง
-                    sprite.position.set(xOffset, stageHeight + (sHeight / 2), 0);
-
-                    btsGroup.add(sprite);
-                }
-            },
-            undefined,
-            function(error) {
-                console.error("ไม่สามารถโหลดภาพศิลปินได้", error);
+            // ตกแต่งชุดตาม Reference Image
+            if (index === 1 || index === 3) {
+                // Jin และ RM มีผ้าพันคอสีขาว
+                const scarf = new THREE.Mesh(new THREE.BoxGeometry(0.3, 1.1, 0.4), whiteMat);
+                scarf.position.set(0, 0, 0.05);
+                torso.add(scarf);
             }
-        );
+            if (index === 2) {
+                // Suga เสื้อซับในสีขาวปลิ้นออกมา
+                const shirt = new THREE.Mesh(new THREE.BoxGeometry(0.82, 0.5, 0.37), whiteMat);
+                shirt.position.set(0, -0.4, 0);
+                torso.add(shirt);
+            }
+
+            const headGroup = new THREE.Group();
+            headGroup.position.y = 0.85; 
+            const head = new THREE.Mesh(headGeo, skinMat);
+            const hair = new THREE.Mesh(hairGeo, hairMat);
+            hair.position.y = 0.25;
+            headGroup.add(head); headGroup.add(hair);
+            torso.add(headGroup);
+
+            const rightArmGroup = new THREE.Group();
+            rightArmGroup.position.set(0.55, 0.4, 0); 
+            const rightArm = new THREE.Mesh(armGeo, suitMat);
+            rightArm.position.y = -0.5; 
+            rightArmGroup.add(rightArm);
+            torso.add(rightArmGroup);
+
+            const leftArmGroup = new THREE.Group();
+            leftArmGroup.position.set(-0.55, 0.4, 0);
+            const leftArm = new THREE.Mesh(armGeo, suitMat);
+            leftArm.position.y = -0.5;
+            leftArmGroup.add(leftArm);
+            torso.add(leftArmGroup);
+
+            const rightLegGroup = new THREE.Group();
+            rightLegGroup.position.set(0.2, -0.6, 0); 
+            const rightLeg = new THREE.Mesh(legGeo, suitMat);
+            rightLeg.position.y = -0.6;
+            rightLegGroup.add(rightLeg);
+            torso.add(rightLegGroup);
+
+            const leftLegGroup = new THREE.Group();
+            leftLegGroup.position.set(-0.2, -0.6, 0);
+            const leftLeg = new THREE.Mesh(legGeo, suitMat);
+            leftLeg.position.y = -0.6;
+            leftLegGroup.add(leftLeg);
+            torso.add(leftLegGroup);
+
+            human.add(torso);
+            
+            // จัดแถวให้ยืนหน้ากระดาน 7 คนบนเวที
+            const spacing = 1.4;
+            const xOffset = (index - 3) * spacing;
+            human.position.set(xOffset, stageHeight, 0);
+
+            btsGroup.add(human);
+
+            return {
+                root: human, torso: torso, head: headGroup,
+                rightArm: rightArmGroup, leftArm: leftArmGroup,
+                rightLeg: rightLegGroup, leftLeg: leftLegGroup,
+                animSeed: Math.random() * Math.PI * 2
+            };
+        }
+
+        for (let i = 0; i < 7; i++) {
+            btsMembers.push(createStyledHuman(i));
+        }
+        realStage.add(btsGroup);
 
         // --- 6. Interaction ---
         const raycaster = new THREE.Raycaster();
@@ -387,6 +453,15 @@
                     tooltip.style.opacity = 0;
                 }
             }
+
+            // Animate BTS Members (เต้นและโยกหัวเบาๆ)
+            const danceSpeed = time * 3;
+            btsMembers.forEach(m => {
+                m.root.position.y = stageHeight + Math.abs(Math.sin(danceSpeed + m.animSeed)) * 0.1;
+                m.head.rotation.y = Math.sin(danceSpeed * 0.5 + m.animSeed) * 0.2;
+                m.rightArm.rotation.x = -Math.PI / 3 + Math.sin(danceSpeed + m.animSeed) * 0.2; // ถือไมค์
+                m.leftArm.rotation.x = Math.sin(danceSpeed * 0.5 + m.animSeed) * 0.3; // แกว่งแขน
+            });
 
             controls.update();
             renderer.render(scene, camera);
