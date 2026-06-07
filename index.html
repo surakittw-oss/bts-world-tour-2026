@@ -230,22 +230,82 @@
             stadiumGroup.add(createZoneSegment(97, 108, 36, 16, angleStart, westSpan / totalSide - (GAP/2), TIER_CONFIG.TEAL, i+totalSide+1));
         }
 
-        // --- 5. Build Stage (ย้อนกลับเป็นเวทีทรงกากบาทเรียบง่าย) ---
-        const stageMat = new THREE.MeshStandardMaterial({ color: 0xffffff, emissive: 0x444444 });
-        const stageCenter = new THREE.Mesh(new THREE.CylinderGeometry(8, 8, 2, 32), stageMat);
-        stadiumGroup.add(stageCenter);
+        // --- 5. Build Stage (เวที Real Stage แบบย่อส่วนเพื่อให้โหลดเร็ว) ---
+        const stageHeight = 1;
+        const stageFloorMat = new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.8, metalness: 0.4 });
+        const screenMatBg = new THREE.MeshStandardMaterial({ color: 0x440000, emissive: 0xcc0033, emissiveIntensity: 1.5 });
+        const screenMatFg = new THREE.MeshStandardMaterial({ color: 0xffffff, emissive: 0xffffff, emissiveIntensity: 2 });
+        const cyanNeon = new THREE.MeshBasicMaterial({ color: 0x00e5ff });
+        
+        const realStage = new THREE.Group();
 
-        const runwayMat = new THREE.MeshStandardMaterial({ color: 0xcccccc });
-        const runwayGeo1 = new THREE.BoxGeometry(40, 1.5, 4);
-        const runway1 = new THREE.Mesh(runwayGeo1, runwayMat);
-        runway1.rotation.y = Math.PI / 4;
-        stadiumGroup.add(runway1);
+        // 5.1 Center Square Platform
+        const cSize = 6;
+        const centerPlat = new THREE.Mesh(new THREE.BoxGeometry(cSize, stageHeight, cSize), stageFloorMat);
+        centerPlat.position.y = stageHeight/2;
+        realStage.add(centerPlat);
 
-        const runwayGeo2 = new THREE.BoxGeometry(40, 1.5, 4);
-        const runway2 = new THREE.Mesh(runwayGeo2, runwayMat);
-        runway2.rotation.y = -Math.PI / 4;
-        stadiumGroup.add(runway2);
+        // 5.2 Floating Light Rig (โครงไฟลอยฟ้า)
+        const rigGeo = new THREE.EdgesGeometry(new THREE.BoxGeometry(cSize-0.5, 1.5, cSize-0.5));
+        const rigMat = new THREE.LineBasicMaterial({ color: 0x00e5ff, linewidth: 2 });
+        const rig = new THREE.LineSegments(rigGeo, rigMat);
+        rig.position.y = stageHeight + 4;
+        realStage.add(rig);
 
+        // 5.3 The 4 Arms (แขนเวที 4 แฉก)
+        const armLen = 6.5;
+        const armWid = 1.8;
+        const endSize = 2.5;
+
+        for(let i=0; i<4; i++) {
+            const armGroup = new THREE.Group();
+            const angle = (i * Math.PI / 2) + Math.PI / 4; 
+            
+            // ทางเดิน
+            const walkway = new THREE.Mesh(new THREE.BoxGeometry(armLen, stageHeight, armWid), stageFloorMat);
+            walkway.position.set(armLen/2 + cSize/2 - 0.5, stageHeight/2, 0);
+            armGroup.add(walkway);
+            
+            // ไฟขอบเวที
+            const edge1 = new THREE.Mesh(new THREE.BoxGeometry(armLen, 0.2, 0.2), cyanNeon);
+            edge1.position.set(armLen/2 + cSize/2 - 0.5, stageHeight, armWid/2 - 0.1);
+            armGroup.add(edge1);
+            const edge2 = new THREE.Mesh(new THREE.BoxGeometry(armLen, 0.2, 0.2), cyanNeon);
+            edge2.position.set(armLen/2 + cSize/2 - 0.5, stageHeight, -armWid/2 + 0.1);
+            armGroup.add(edge2);
+
+            // จอ LED ด้านข้าง
+            const scLen = 4;
+            const scHei = 2.5;
+            const screen = new THREE.Mesh(new THREE.BoxGeometry(scLen, scHei, 0.4), screenMatBg);
+            screen.position.set(scLen/2 + cSize/2, stageHeight + scHei/2, armWid/2 + 0.2);
+            screen.rotation.y = -0.15; 
+            
+            const graphic = new THREE.Mesh(new THREE.BoxGeometry(scLen * 0.6, scHei * 0.4, 0.5), screenMatFg);
+            graphic.position.copy(screen.position);
+            graphic.rotation.copy(screen.rotation);
+            
+            armGroup.add(screen);
+            armGroup.add(graphic);
+            
+            // เวทีปลายทาง
+            const endStage = new THREE.Mesh(new THREE.BoxGeometry(endSize, stageHeight, endSize*1.2), stageFloorMat);
+            endStage.position.set(armLen + cSize/2 + endSize/2 - 0.5, stageHeight/2, 0);
+            armGroup.add(endStage);
+
+            const endEdge = new THREE.LineSegments(
+                new THREE.EdgesGeometry(new THREE.BoxGeometry(endSize, stageHeight+0.1, endSize*1.2)), 
+                new THREE.LineBasicMaterial({ color: 0x8a2be2 })
+            );
+            endEdge.position.copy(endStage.position);
+            armGroup.add(endEdge);
+
+            armGroup.rotation.y = angle;
+            realStage.add(armGroup);
+        }
+        scene.add(realStage);
+
+        // พื้นสนามสีดำ
         const groundGeo = new THREE.PlaneGeometry(300, 300);
         groundGeo.scale(1, OVAL_SCALE_Z, 1);
         const ground = new THREE.Mesh(groundGeo, new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.8, transparent: true, opacity: 0.5 }));
@@ -269,14 +329,14 @@
             const sprite = new THREE.Sprite(material);
 
             // ย่อขนาด Sprite ลงให้พอดีกับเวทีขนาดเล็ก
-            const spriteWidth = 1.8;
-            const spriteHeight = 3.5;
+            const spriteWidth = 1.2;
+            const spriteHeight = 2.4;
             sprite.scale.set(spriteWidth, spriteHeight, 1);
 
-            const spacing = 1.4;
+            const spacing = 0.8;
             const xOffset = (index - (total - 1) / 2) * spacing;
             // จัดตำแหน่งให้ยืนตรงกลางเวที
-            sprite.position.set(xOffset, 1 + spriteHeight / 2, 0);
+            sprite.position.set(xOffset, stageHeight + (spriteHeight / 2), 0);
 
             return sprite;
         }
@@ -284,7 +344,7 @@
         for (let i = 0; i < 7; i++) {
             btsGroup.add(createBTSSprite(i, 7));
         }
-        stadiumGroup.add(btsGroup); // นำไปผูกไว้กับสนาม เพื่อให้เคลื่อนที่ไปพร้อมกัน
+        realStage.add(btsGroup); // นำไปผูกไว้กับเวที Real Stage ตรงกลาง
 
         // --- 6. Interaction ---
         const raycaster = new THREE.Raycaster();
@@ -384,5 +444,6 @@
     </script>
 </body>
 </html>
+
 
 
