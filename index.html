@@ -95,12 +95,12 @@
         const container = document.getElementById('canvas-container');
         const scene = new THREE.Scene();
         scene.background = new THREE.Color(0x0a0a0f);
-        scene.fog = new THREE.FogExp2(0x0a0a0f, 0.0025); // Adjusted fog for larger scale
+        scene.fog = new THREE.FogExp2(0x0a0a0f, 0.003); // ปรับหมอกกลับเป็นระยะเดิม
 
-        const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 2000);
-        // Zoomed out more to accommodate the massive realistic stage
-        const initialCameraZ = window.innerWidth < 768 ? 450 : 350;
-        camera.position.set(0, 200, initialCameraZ); 
+        const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+        // ปรับระยะกล้องกลับมาใกล้ขึ้น เนื่องจากขนาดย่อลงแล้ว
+        const initialCameraZ = window.innerWidth < 768 ? 320 : 220;
+        camera.position.set(0, 140, initialCameraZ); 
 
         const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
@@ -110,111 +110,28 @@
         const controls = new THREE.OrbitControls(camera, renderer.domElement);
         controls.enableDamping = true;
         controls.dampingFactor = 0.05;
-        controls.maxPolarAngle = Math.PI / 2 - 0.02;
-        controls.minDistance = 50;
-        controls.maxDistance = 600;
-        controls.autoRotate = false; // User controls rotation
+        controls.maxPolarAngle = Math.PI / 2 - 0.05;
+        controls.minDistance = 30;
+        controls.maxDistance = 350; // ปรับระยะซูมออกสูงสุดกลับเป็นค่าเดิม
+        controls.autoRotate = false;
 
         // --- 2. Lighting ---
-        const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
         scene.add(ambientLight);
 
-        const stageLight = new THREE.PointLight(0xffffff, 2, 300);
-        stageLight.position.set(0, 30, 0);
+        const stageLight = new THREE.PointLight(0xffffff, 1.5, 200);
+        stageLight.position.set(0, 10, 0);
         scene.add(stageLight);
 
-        // Purple stadium fill light
-        const purpleGlow = new THREE.PointLight(0x8a2be2, 1.5, 400);
-        purpleGlow.position.set(0, 80, 0);
+        const purpleGlow = new THREE.PointLight(0xb53bb5, 2, 150);
+        purpleGlow.position.set(0, 20, 0);
         scene.add(purpleGlow);
 
         const dirLight = new THREE.DirectionalLight(0x3B82F6, 0.6);
-        dirLight.position.set(100, 200, 50);
+        dirLight.position.set(100, 100, 50);
         scene.add(dirLight);
 
-        // --- 3. Stage Construction (Replicated from Images) ---
-        const stageHeight = 3;
-        
-        // Materials for Stage
-        const stageFloorMat = new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.8, metalness: 0.4 });
-        const screenMatBg = new THREE.MeshStandardMaterial({ color: 0x440000, emissive: 0xcc0033, emissiveIntensity: 1.5 });
-        const screenMatFg = new THREE.MeshStandardMaterial({ color: 0xffffff, emissive: 0xffffff, emissiveIntensity: 2 });
-        const cyanNeon = new THREE.MeshBasicMaterial({ color: 0x00e5ff });
-        
-        const realStage = new THREE.Group();
-
-        // 3.1 Center Square Platform
-        const cSize = 28;
-        const centerPlat = new THREE.Mesh(new THREE.BoxGeometry(cSize, stageHeight, cSize), stageFloorMat);
-        centerPlat.position.y = stageHeight/2;
-        realStage.add(centerPlat);
-
-        // 3.2 Floating Light Rig (The hollow square above center)
-        const rigGeo = new THREE.EdgesGeometry(new THREE.BoxGeometry(cSize-2, 4, cSize-2));
-        const rigMat = new THREE.LineBasicMaterial({ color: 0x00e5ff, linewidth: 2 });
-        const rig = new THREE.LineSegments(rigGeo, rigMat);
-        rig.position.y = stageHeight + 15;
-        realStage.add(rig);
-
-        // 3.3 The 4 Arms (Forming the 'X')
-        const armLen = 45;
-        const armWid = 10;
-        const endSize = 14;
-
-        for(let i=0; i<4; i++) {
-            const armGroup = new THREE.Group();
-            const angle = (i * Math.PI / 2) + Math.PI / 4; // 45, 135, 225, 315 degrees
-            
-            // Walkway
-            const walkway = new THREE.Mesh(new THREE.BoxGeometry(armLen, stageHeight, armWid), stageFloorMat);
-            walkway.position.set(armLen/2 + cSize/2 - 1, stageHeight/2, 0);
-            armGroup.add(walkway);
-            
-            // Cyan Edge Lights
-            const edge1 = new THREE.Mesh(new THREE.BoxGeometry(armLen, 0.4, 0.4), cyanNeon);
-            edge1.position.set(armLen/2 + cSize/2 - 1, stageHeight, armWid/2 - 0.2);
-            armGroup.add(edge1);
-            const edge2 = new THREE.Mesh(new THREE.BoxGeometry(armLen, 0.4, 0.4), cyanNeon);
-            edge2.position.set(armLen/2 + cSize/2 - 1, stageHeight, -armWid/2 + 0.2);
-            armGroup.add(edge2);
-
-            // Massive LED Screens (Angled slightly outwards forming the inner cross)
-            const scLen = 28;
-            const scHei = 14;
-            const screen = new THREE.Mesh(new THREE.BoxGeometry(scLen, scHei, 1.5), screenMatBg);
-            // Position screens along the arm
-            screen.position.set(scLen/2 + cSize/2 + 2, stageHeight + scHei/2, armWid/2 + 0.5);
-            screen.rotation.y = -0.15; // Angle it like a V
-            
-            // White graphic pattern on screen
-            const graphic = new THREE.Mesh(new THREE.BoxGeometry(scLen * 0.6, scHei * 0.4, 2), screenMatFg);
-            graphic.position.copy(screen.position);
-            graphic.rotation.copy(screen.rotation);
-            
-            // Add screens to 2 sides if needed, but drone shot shows them mainly on one edge per arm forming a continuous wall
-            armGroup.add(screen);
-            armGroup.add(graphic);
-            
-            // End Stage (Square at tip)
-            const endStage = new THREE.Mesh(new THREE.BoxGeometry(endSize, stageHeight, endSize*1.2), stageFloorMat);
-            endStage.position.set(armLen + cSize/2 + endSize/2 - 1, stageHeight/2, 0);
-            armGroup.add(endStage);
-
-            // End Stage neon
-            const endEdge = new THREE.LineSegments(
-                new THREE.EdgesGeometry(new THREE.BoxGeometry(endSize, stageHeight+0.1, endSize*1.2)), 
-                new THREE.LineBasicMaterial({ color: 0x8a2be2 })
-            );
-            endEdge.position.copy(endStage.position);
-            armGroup.add(endEdge);
-
-            armGroup.rotation.y = angle;
-            realStage.add(armGroup);
-        }
-        
-        scene.add(realStage); // Add directly to scene so it doesn't get stretched into oval
-
-        // --- 4. Stadium Seating (Scaled up to fit the massive stage) ---
+        // --- 3. Data & Config ---
         const TIER_CONFIG = {
             VIP: { color: 0xb53bb5, price: '7,800', prefix: 'V' },
             RED: { color: 0xff1a1a, price: '6,800', prefix: 'A' },
@@ -225,13 +142,12 @@
         };
 
         const stadiumGroup = new THREE.Group();
-        const OVAL_SCALE_Z = 1.3;
+        const OVAL_SCALE_Z = 1.4;
 
         function createTextSprite(message, fontColor = "white") {
             const canvas = document.createElement('canvas');
             const context = canvas.getContext('2d');
             
-            // 1. ลดขนาด Canvas ลงครึ่งหนึ่งเพื่อเพิ่มความเร็วในการเรนเดอร์
             canvas.width = 128; canvas.height = 64;
             
             context.font = "Bold 28px Montserrat, Kanit, sans-serif";
@@ -240,13 +156,12 @@
             context.shadowColor = "rgba(0, 0, 0, 1)";
             context.shadowBlur = 5; context.shadowOffsetX = 2; context.shadowOffsetY = 2;
             
-            // ปรับตำแหน่งกึ่งกลางใหม่ตามขนาด Canvas
             context.fillText(message, 64, 32);
             
             const texture = new THREE.CanvasTexture(canvas);
             const spriteMaterial = new THREE.SpriteMaterial({ map: texture, transparent: true });
             const sprite = new THREE.Sprite(spriteMaterial);
-            sprite.scale.set(16, 8, 1); // ขนาดที่แสดงใน 3D ยังเท่าเดิม
+            sprite.scale.set(12, 6, 1); 
             return sprite;
         }
 
@@ -254,8 +169,6 @@
             const shape = new THREE.Shape();
             shape.absarc(0, 0, outerRadius, angleStart, angleStart + angleLength, false);
             shape.absarc(0, 0, innerRadius, angleStart + angleLength, angleStart, true);
-            
-            // 2. ลดความละเอียดของ Polygon (curveSegments, bevelSegments) เพื่อให้สร้าง Object ไวขึ้น
             const extrudeSettings = { depth: height, bevelEnabled: true, bevelThickness: 0.5, bevelSize: 0.5, bevelSegments: 1, curveSegments: 4 };
             const geometry = new THREE.ExtrudeGeometry(shape, extrudeSettings);
             
@@ -270,7 +183,7 @@
             const mesh = new THREE.Mesh(geometry, material);
             
             const edges = new THREE.EdgesGeometry(geometry);
-            const line = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color: xffffff, transparent: true, opacity: 0.15 }));
+            const line = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.15 }));
             mesh.add(line);
 
             const zoneName = `${config.prefix}${zoneId}`;
@@ -281,7 +194,7 @@
             const midRadius = (innerRadius + outerRadius) / 2;
             const labelX = Math.cos(midAngle) * midRadius;
             const labelZ = -Math.sin(midAngle) * midRadius * OVAL_SCALE_Z; 
-            const labelY = yBottom + height + 2; 
+            const labelY = yBottom + height + 1.5; 
             
             labelSprite.position.set(labelX, labelY, labelZ);
             labelSprite.userData.isLabel = true;
@@ -291,47 +204,49 @@
             return mesh;
         }
 
-        // --- Adjusting Radii for Massive Stage ---
-        // The stage max radius is approx 75 units. So seating starts at 80.
-        const GAP = 0.03;
+        // --- 4. Build Stadium Geometry (ย้อนกลับมาใช้สเกลเดิมที่โหลดเร็ว) ---
+        const GAP = 0.04;
 
-        // VIP (Ground)
         const totalVip = 16;
-        for(let i=0; i<totalVip; i++) {
-            stadiumGroup.add(createZoneSegment(75, 95, 0, 1, i * ((Math.PI * 2) / totalVip), ((Math.PI * 2) / totalVip) - GAP, TIER_CONFIG.VIP, i+1));
-        }
-        // RED (Ground)
+        for(let i=0; i<totalVip; i++) stadiumGroup.add(createZoneSegment(12, 28, 0, 1, i * ((Math.PI * 2) / totalVip), ((Math.PI * 2) / totalVip) - GAP, TIER_CONFIG.VIP, i+1));
         const totalRed = 24;
-        for(let i=0; i<totalRed; i++) {
-            stadiumGroup.add(createZoneSegment(98, 120, 0, 1, i * ((Math.PI * 2) / totalRed), ((Math.PI * 2) / totalRed) - GAP, TIER_CONFIG.RED, i+1));
-        }
-        // BLUE (Tier 1)
+        for(let i=0; i<totalRed; i++) stadiumGroup.add(createZoneSegment(30, 45, 0, 1, i * ((Math.PI * 2) / totalRed), ((Math.PI * 2) / totalRed) - GAP, TIER_CONFIG.RED, i+1));
         const totalBlue = 28;
-        for(let i=0; i<totalBlue; i++) {
-            stadiumGroup.add(createZoneSegment(123, 140, 2, 8, i * ((Math.PI * 2) / totalBlue), ((Math.PI * 2) / totalBlue) - GAP, TIER_CONFIG.BLUE, i+1));
-        }
-        // YELLOW (Tier 2)
+        for(let i=0; i<totalBlue; i++) stadiumGroup.add(createZoneSegment(48, 62, 2, 8, i * ((Math.PI * 2) / totalBlue), ((Math.PI * 2) / totalBlue) - GAP, TIER_CONFIG.BLUE, i+1));
         const totalYellow = 32;
-        for(let i=0; i<totalYellow; i++) {
-            stadiumGroup.add(createZoneSegment(143, 160, 10, 12, i * ((Math.PI * 2) / totalYellow), ((Math.PI * 2) / totalYellow) - GAP, TIER_CONFIG.YELLOW, i+1));
-        }
-        // GREEN & TEAL (Tier 3)
+        for(let i=0; i<totalYellow; i++) stadiumGroup.add(createZoneSegment(65, 80, 10, 12, i * ((Math.PI * 2) / totalYellow), ((Math.PI * 2) / totalYellow) - GAP, TIER_CONFIG.YELLOW, i+1));
+        
         const totalSide = 12;
         const eastStart = -Math.PI / 4, eastSpan = Math.PI / 2;
         for(let i=0; i<totalSide; i++) {
             const angleStart = eastStart + (i * (eastSpan / totalSide));
-            stadiumGroup.add(createZoneSegment(163, 180, 22, 14, angleStart, eastSpan / totalSide - (GAP/2), TIER_CONFIG.GREEN, i+1));
-            stadiumGroup.add(createZoneSegment(183, 195, 36, 16, angleStart, eastSpan / totalSide - (GAP/2), TIER_CONFIG.TEAL, i+1));
+            stadiumGroup.add(createZoneSegment(83, 95, 22, 14, angleStart, eastSpan / totalSide - (GAP/2), TIER_CONFIG.GREEN, i+1));
+            stadiumGroup.add(createZoneSegment(97, 108, 36, 16, angleStart, eastSpan / totalSide - (GAP/2), TIER_CONFIG.TEAL, i+1));
         }
         const westStart = Math.PI * 0.75, westSpan = Math.PI / 2;
         for(let i=0; i<totalSide; i++) {
             const angleStart = westStart + (i * (westSpan / totalSide));
-            stadiumGroup.add(createZoneSegment(163, 180, 22, 14, angleStart, westSpan / totalSide - (GAP/2), TIER_CONFIG.GREEN, i+totalSide+1));
-            stadiumGroup.add(createZoneSegment(183, 195, 36, 16, angleStart, westSpan / totalSide - (GAP/2), TIER_CONFIG.TEAL, i+totalSide+1));
+            stadiumGroup.add(createZoneSegment(83, 95, 22, 14, angleStart, westSpan / totalSide - (GAP/2), TIER_CONFIG.GREEN, i+totalSide+1));
+            stadiumGroup.add(createZoneSegment(97, 108, 36, 16, angleStart, westSpan / totalSide - (GAP/2), TIER_CONFIG.TEAL, i+totalSide+1));
         }
 
-        // Ground Floor decoration
-        const groundGeo = new THREE.PlaneGeometry(500, 500);
+        // --- 5. Build Stage (ย้อนกลับเป็นเวทีทรงกากบาทเรียบง่าย) ---
+        const stageMat = new THREE.MeshStandardMaterial({ color: 0xffffff, emissive: 0x444444 });
+        const stageCenter = new THREE.Mesh(new THREE.CylinderGeometry(8, 8, 2, 32), stageMat);
+        stadiumGroup.add(stageCenter);
+
+        const runwayMat = new THREE.MeshStandardMaterial({ color: 0xcccccc });
+        const runwayGeo1 = new THREE.BoxGeometry(40, 1.5, 4);
+        const runway1 = new THREE.Mesh(runwayGeo1, runwayMat);
+        runway1.rotation.y = Math.PI / 4;
+        stadiumGroup.add(runway1);
+
+        const runwayGeo2 = new THREE.BoxGeometry(40, 1.5, 4);
+        const runway2 = new THREE.Mesh(runwayGeo2, runwayMat);
+        runway2.rotation.y = -Math.PI / 4;
+        stadiumGroup.add(runway2);
+
+        const groundGeo = new THREE.PlaneGeometry(300, 300);
         groundGeo.scale(1, OVAL_SCALE_Z, 1);
         const ground = new THREE.Mesh(groundGeo, new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.8, transparent: true, opacity: 0.5 }));
         ground.rotation.x = -Math.PI / 2; ground.position.y = -1;
@@ -339,42 +254,37 @@
 
         scene.add(stadiumGroup);
 
-        // --- 5. 3D BTS Members (Sprites from Image) ---
+        // --- 5.1 3D BTS Members (ยังคงใช้รูปภาพเหมือนเดิม แต่ย่อขนาดให้พอดีเวทีใหม่) ---
         const btsGroup = new THREE.Group();
         const textureLoader = new THREE.TextureLoader();
         const btsTexture = textureLoader.load('353340C5-FABD-457B-877D-C63AEA66FCF4.png');
 
         function createBTSSprite(index, total) {
-            // Clone the texture so each sprite can have a different offset
             const texture = btsTexture.clone();
             texture.needsUpdate = true;
-            // The image has 7 members, so we repeat 1/7th of the image horizontally
             texture.repeat.set(1 / total, 1);
-            // Offset the texture to show the correct member based on index
             texture.offset.x = index / total;
 
             const material = new THREE.SpriteMaterial({ map: texture, transparent: true });
             const sprite = new THREE.Sprite(material);
 
-            // Scale the sprite to be proportional to a human size
-            // Adjust these values to change the size of the members
-            const spriteWidth = 4;
-            const spriteHeight = 6;
+            // ย่อขนาด Sprite ลงให้พอดีกับเวทีขนาดเล็ก
+            const spriteWidth = 1.8;
+            const spriteHeight = 3.5;
             sprite.scale.set(spriteWidth, spriteHeight, 1);
 
-            // Position them on the stage, spread out
-            const spacing = 3;
+            const spacing = 1.4;
             const xOffset = (index - (total - 1) / 2) * spacing;
-            sprite.position.set(xOffset, stageHeight + spriteHeight / 2, -2);
+            // จัดตำแหน่งให้ยืนตรงกลางเวที
+            sprite.position.set(xOffset, 1 + spriteHeight / 2, 0);
 
             return sprite;
         }
 
-        // Create a sprite for each of the 7 members
         for (let i = 0; i < 7; i++) {
             btsGroup.add(createBTSSprite(i, 7));
         }
-        scene.add(btsGroup);
+        stadiumGroup.add(btsGroup); // นำไปผูกไว้กับสนาม เพื่อให้เคลื่อนที่ไปพร้อมกัน
 
         // --- 6. Interaction ---
         const raycaster = new THREE.Raycaster();
@@ -460,8 +370,9 @@
             camera.aspect = window.innerWidth / window.innerHeight;
             camera.updateProjectionMatrix();
             renderer.setSize(window.innerWidth, window.innerHeight);
-            if (window.innerWidth < 768 && camera.position.z < 350) camera.position.z = 450;
-            else if (window.innerWidth >= 768 && camera.position.z > 350 && camera.position.z === 450) camera.position.z = 350;
+            // ปรับระยะกล้องใหม่ตอนย่อ/ขยายหน้าจอ ให้เข้ากับสเกลที่เล็กลง
+            if (window.innerWidth < 768 && camera.position.z < 250) camera.position.z = 320;
+            else if (window.innerWidth >= 768 && camera.position.z > 250 && camera.position.z === 320) camera.position.z = 220;
         }, false);
 
         window.onload = () => {
@@ -473,4 +384,5 @@
     </script>
 </body>
 </html>
+
 
