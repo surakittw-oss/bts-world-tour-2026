@@ -230,17 +230,23 @@
         function createTextSprite(message, fontColor = "white") {
             const canvas = document.createElement('canvas');
             const context = canvas.getContext('2d');
-            canvas.width = 256; canvas.height = 128;
-            context.font = "Bold 56px Montserrat, Kanit, sans-serif";
+            
+            // 1. ลดขนาด Canvas ลงครึ่งหนึ่งเพื่อเพิ่มความเร็วในการเรนเดอร์
+            canvas.width = 128; canvas.height = 64;
+            
+            context.font = "Bold 28px Montserrat, Kanit, sans-serif";
             context.fillStyle = fontColor;
             context.textAlign = "center"; context.textBaseline = "middle";
             context.shadowColor = "rgba(0, 0, 0, 1)";
-            context.shadowBlur = 10; context.shadowOffsetX = 3; context.shadowOffsetY = 3;
-            context.fillText(message, 128, 64);
+            context.shadowBlur = 5; context.shadowOffsetX = 2; context.shadowOffsetY = 2;
+            
+            // ปรับตำแหน่งกึ่งกลางใหม่ตามขนาด Canvas
+            context.fillText(message, 64, 32);
+            
             const texture = new THREE.CanvasTexture(canvas);
             const spriteMaterial = new THREE.SpriteMaterial({ map: texture, transparent: true });
             const sprite = new THREE.Sprite(spriteMaterial);
-            sprite.scale.set(16, 8, 1); // Made labels slightly bigger
+            sprite.scale.set(16, 8, 1); // ขนาดที่แสดงใน 3D ยังเท่าเดิม
             return sprite;
         }
 
@@ -248,7 +254,9 @@
             const shape = new THREE.Shape();
             shape.absarc(0, 0, outerRadius, angleStart, angleStart + angleLength, false);
             shape.absarc(0, 0, innerRadius, angleStart + angleLength, angleStart, true);
-            const extrudeSettings = { depth: height, bevelEnabled: true, bevelThickness: 0.5, bevelSize: 0.5, bevelSegments: 2, curveSegments: 12 };
+            
+            // 2. ลดความละเอียดของ Polygon (curveSegments, bevelSegments) เพื่อให้สร้าง Object ไวขึ้น
+            const extrudeSettings = { depth: height, bevelEnabled: true, bevelThickness: 0.5, bevelSize: 0.5, bevelSegments: 1, curveSegments: 4 };
             const geometry = new THREE.ExtrudeGeometry(shape, extrudeSettings);
             
             geometry.rotateX(-Math.PI / 2);
@@ -457,11 +465,10 @@
         }, false);
 
         window.onload = () => {
-            setTimeout(() => {
-                document.getElementById('loading').style.opacity = '0';
-                setTimeout(() => document.getElementById('loading').style.display = 'none', 500);
-                animate();
-            }, 1000);
+            // 3. เอาการหน่วงเวลา (setTimeout 1 วินาที) ออกไป เพื่อให้แสดงผลทันที
+            document.getElementById('loading').style.opacity = '0';
+            setTimeout(() => document.getElementById('loading').style.display = 'none', 500);
+            animate();
         };
     </script>
 </body>
