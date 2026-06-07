@@ -229,11 +229,58 @@
         centerStage.position.y = stageHeight / 2;
         realStage.add(centerStage);
 
-        // โครงเหล็กลอยฟ้าเหนือเวที (Light Rig)
-        const rigGeo = new THREE.EdgesGeometry(new THREE.CylinderGeometry(centerRadius-1, centerRadius-1, 1.5, 16));
-        const rig = new THREE.LineSegments(rigGeo, new THREE.LineBasicMaterial({ color: 0x00ffff, linewidth: 2 }));
-        rig.position.y = stageHeight + 8;
-        realStage.add(rig);
+        // --- เปลี่ยนโครงเหล็กเป็นจอ LED 3D ทรง 8 เหลี่ยมเหนือเวที (3D Overhead Screen) ---
+        const overheadScreenGroup = new THREE.Group();
+        overheadScreenGroup.position.y = stageHeight + 11; // ลอยเหนือหัวศิลปิน
+        
+        const numScreens = 8;
+        const overheadRadius = centerRadius - 1;
+        const scWidth = 2 * overheadRadius * Math.tan(Math.PI / numScreens) - 0.2; // คำนวณความกว้างให้ต่อกันเป็น 8 เหลี่ยมพอดี
+        const scHeight = 3.5;
+        const scDepth = 0.6; // ความหนาของหน้าจอ 3D
+
+        const trussMat = new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.8, metalness: 0.9 });
+        const overheadLedBg = new THREE.MeshStandardMaterial({ color: 0x220000, emissive: 0x880011, emissiveIntensity: 1.2 });
+        const overheadLedFg = new THREE.MeshStandardMaterial({ color: 0xffffff, emissive: 0xffffff, emissiveIntensity: 2 });
+
+        for (let i = 0; i < numScreens; i++) {
+            const angle = (i / numScreens) * Math.PI * 2;
+            const screenNode = new THREE.Group();
+            
+            // โครงหน้าจอ (ความหนา 3D)
+            const frame = new THREE.Mesh(new THREE.BoxGeometry(scWidth, scHeight, scDepth), trussMat);
+            screenNode.add(frame);
+            
+            // แผงจอ LED หันออกด้านนอก
+            const screenFaceOut = new THREE.Mesh(new THREE.BoxGeometry(scWidth - 0.4, scHeight - 0.4, 0.1), overheadLedBg);
+            screenFaceOut.position.z = scDepth / 2 + 0.05;
+            screenNode.add(screenFaceOut);
+
+            // กราฟิกสีขาวบนหน้าจอด้านนอก
+            const graphicFaceOut = new THREE.Mesh(new THREE.BoxGeometry(scWidth * 0.6, scHeight * 0.3, 0.1), overheadLedFg);
+            graphicFaceOut.position.z = scDepth / 2 + 0.1;
+            screenNode.add(graphicFaceOut);
+
+            // แผงจอ LED หันเข้าด้านใน (เห็นได้ถ้ามองมุมเสย)
+            const screenFaceIn = new THREE.Mesh(new THREE.BoxGeometry(scWidth - 0.4, scHeight - 0.4, 0.1), overheadLedBg);
+            screenFaceIn.position.z = -scDepth / 2 - 0.05;
+            screenNode.add(screenFaceIn);
+
+            screenNode.position.set(Math.sin(angle) * overheadRadius, 0, Math.cos(angle) * overheadRadius);
+            screenNode.rotation.y = angle; // หมุนให้หันออกด้านนอก
+            
+            overheadScreenGroup.add(screenNode);
+        }
+        
+        // เพิ่มไฟวงแหวนด้านล่างของหน้าจอ
+        const ringLightGeo = new THREE.TorusGeometry(overheadRadius - 0.5, 0.15, 8, 32);
+        const ringLightMat = new THREE.MeshBasicMaterial({ color: 0x00ffff });
+        const ringLight = new THREE.Mesh(ringLightGeo, ringLightMat);
+        ringLight.rotation.x = Math.PI / 2;
+        ringLight.position.y = -scHeight / 2;
+        overheadScreenGroup.add(ringLight);
+
+        realStage.add(overheadScreenGroup);
 
         // ทางเดิน 4 แฉก + จอ LED ด้านข้าง + เวทีย่อย
         const armLen = 16;
@@ -463,6 +510,11 @@
                 m.leftArm.rotation.x = Math.sin(danceSpeed * 0.5 + m.animSeed) * 0.3; // แกว่งแขน
             });
 
+            // หมุนหน้าจอ 3D ด้านบนอย่างช้าๆ
+            if (typeof overheadScreenGroup !== 'undefined') {
+                overheadScreenGroup.rotation.y = time * 0.1;
+            }
+
             controls.update();
             renderer.render(scene, camera);
         }
@@ -483,4 +535,5 @@
     </script>
 </body>
 </html>
+
 
