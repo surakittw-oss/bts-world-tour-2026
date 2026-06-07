@@ -35,7 +35,7 @@
     <div id="loading" class="loading flex-col">
         <div class="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-fuchsia-500 mb-4"></div>
         <h2 class="text-2xl font-bold tracking-widest font-['Montserrat']">GENERATING 3D MAP</h2>
-        <p class="text-gray-400 mt-2">กำลังจำลองเวที LED และโมเดลศิลปิน 3D...</p>
+        <p class="text-gray-400 mt-2">กำลังเรียงโซนที่นั่งและจำลองเวที 3D...</p>
     </div>
 
     <div id="canvas-container"></div>
@@ -130,14 +130,14 @@
         dirLight.position.set(100, 100, 50);
         scene.add(dirLight);
 
-        // --- 3. Stadium Generation (Fast Load) ---
+        // --- 3. Stadium Generation (Exact Layout Matrix) ---
         const TIER_CONFIG = {
-            VIP: { color: 0xb53bb5, price: '7,800', prefix: 'V' },
-            RED: { color: 0xff1a1a, price: '6,800', prefix: 'A' },
-            BLUE: { color: 0x0055ff, price: '6,300', prefix: 'B' },
-            YELLOW: { color: 0xffd700, price: '5,300', prefix: 'Y' },
-            GREEN: { color: 0x00cc66, price: '4,300', prefix: 'G' },
-            TEAL: { color: 0x00cccc, price: '3,300', prefix: 'T' }
+            VIP: { color: 0xb53bb5, price: '7,800' },
+            RED: { color: 0xff1a1a, price: '6,800' },
+            BLUE: { color: 0x0055ff, price: '6,300' },
+            YELLOW: { color: 0xffd700, price: '5,300' },
+            GREEN: { color: 0x00cc66, price: '4,300' },
+            TEAL: { color: 0x00cccc, price: '3,300' }
         };
 
         const stadiumGroup = new THREE.Group();
@@ -147,7 +147,7 @@
             const canvas = document.createElement('canvas');
             const context = canvas.getContext('2d');
             canvas.width = 128; canvas.height = 64;
-            context.font = "Bold 28px Montserrat, Kanit, sans-serif";
+            context.font = "Bold 26px Montserrat, Kanit, sans-serif";
             context.fillStyle = fontColor;
             context.textAlign = "center"; context.textBaseline = "middle";
             context.shadowColor = "rgba(0, 0, 0, 1)";
@@ -157,11 +157,11 @@
             const texture = new THREE.CanvasTexture(canvas);
             const spriteMaterial = new THREE.SpriteMaterial({ map: texture, transparent: true });
             const sprite = new THREE.Sprite(spriteMaterial);
-            sprite.scale.set(12, 6, 1); 
+            sprite.scale.set(10, 5, 1); 
             return sprite;
         }
 
-        function createZoneSegment(innerRadius, outerRadius, yBottom, height, angleStart, angleLength, config, zoneId) {
+        function createZoneSegment(innerRadius, outerRadius, yBottom, height, angleStart, angleLength, config, labelStr) {
             const shape = new THREE.Shape();
             shape.absarc(0, 0, outerRadius, angleStart, angleStart + angleLength, false);
             shape.absarc(0, 0, innerRadius, angleStart + angleLength, angleStart, true);
@@ -178,32 +178,82 @@
             const edges = new THREE.EdgesGeometry(geometry);
             mesh.add(new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.15 })));
 
-            const labelSprite = createTextSprite(`${config.prefix}${zoneId}`, config.prefix === 'Y' ? "black" : "white");
+            const textColor = config.color === 0xffd700 ? "black" : "white"; // ตัวหนังสือสีดำเฉพาะพื้นเหลือง
+            const labelSprite = createTextSprite(labelStr, textColor);
             const midAngle = angleStart + (angleLength / 2);
             const midRadius = (innerRadius + outerRadius) / 2;
             labelSprite.position.set(Math.cos(midAngle) * midRadius, yBottom + height + 1.5, -Math.sin(midAngle) * midRadius * OVAL_SCALE_Z);
             labelSprite.userData.isLabel = true;
             mesh.add(labelSprite);
 
-            mesh.userData = { name: `Zone ${config.prefix}${zoneId}`, price: config.price, colorHex: config.color, originalEmissive: material.emissive.getHex() };
+            mesh.userData = { name: `Zone ${labelStr}`, price: config.price, colorHex: config.color, originalEmissive: material.emissive.getHex() };
             return mesh;
         }
 
         const GAP = 0.04;
-        const totalVip = 16; for(let i=0; i<totalVip; i++) stadiumGroup.add(createZoneSegment(14, 28, 0, 1, i * ((Math.PI * 2) / totalVip), ((Math.PI * 2) / totalVip) - GAP, TIER_CONFIG.VIP, i+1));
-        const totalRed = 24; for(let i=0; i<totalRed; i++) stadiumGroup.add(createZoneSegment(30, 45, 0, 1, i * ((Math.PI * 2) / totalRed), ((Math.PI * 2) / totalRed) - GAP, TIER_CONFIG.RED, i+1));
-        const totalBlue = 28; for(let i=0; i<totalBlue; i++) stadiumGroup.add(createZoneSegment(48, 62, 2, 8, i * ((Math.PI * 2) / totalBlue), ((Math.PI * 2) / totalBlue) - GAP, TIER_CONFIG.BLUE, i+1));
-        const totalYellow = 32; for(let i=0; i<totalYellow; i++) stadiumGroup.add(createZoneSegment(65, 80, 10, 12, i * ((Math.PI * 2) / totalYellow), ((Math.PI * 2) / totalYellow) - GAP, TIER_CONFIG.YELLOW, i+1));
-        
-        const totalSide = 12;
-        const eastStart = -Math.PI / 4, eastSpan = Math.PI / 2;
-        const westStart = Math.PI * 0.75, westSpan = Math.PI / 2;
-        for(let i=0; i<totalSide; i++) {
-            stadiumGroup.add(createZoneSegment(83, 95, 22, 14, eastStart + (i * (eastSpan / totalSide)), eastSpan / totalSide - (GAP/2), TIER_CONFIG.GREEN, i+1));
-            stadiumGroup.add(createZoneSegment(97, 108, 36, 16, eastStart + (i * (eastSpan / totalSide)), eastSpan / totalSide - (GAP/2), TIER_CONFIG.TEAL, i+1));
-            stadiumGroup.add(createZoneSegment(83, 95, 22, 14, westStart + (i * (westSpan / totalSide)), westSpan / totalSide - (GAP/2), TIER_CONFIG.GREEN, i+totalSide+1));
-            stadiumGroup.add(createZoneSegment(97, 108, 36, 16, westStart + (i * (westSpan / totalSide)), westSpan / totalSide - (GAP/2), TIER_CONFIG.TEAL, i+totalSide+1));
+
+        // 3.1 Ground Floor (VIP & RED) - จัดเรียง V1-V16 และ A1-A24 โดยเริ่มจากซ้ายไปตามเข็ม
+        for(let i=0; i<16; i++) {
+            stadiumGroup.add(createZoneSegment(14, 28, 0, 1, Math.PI + i*Math.PI*2/16, Math.PI*2/16 - GAP, TIER_CONFIG.VIP, 'V'+(i+1)));
         }
+        for(let i=0; i<24; i++) {
+            stadiumGroup.add(createZoneSegment(30, 45, 0, 1, Math.PI + i*Math.PI*2/24, Math.PI*2/24 - GAP, TIER_CONFIG.RED, 'A'+(i+1)));
+        }
+
+        // 3.2 Main Stands (BLUE & YELLOW) - จัดเรียงแบบ 4 ทิศทาง N, S, E, W แบบเป๊ะๆ
+        function buildFullTier(radIn, radOut, yPos, height, config, tierNum, counts, reverses) {
+            const total = counts.S + counts.W + counts.N + counts.E;
+            const blockSpan = (Math.PI * 2) / total;
+            
+            // ให้จุดกึ่งกลางของ S อยู่ตรงทิศเหนือบนจอพอดี (-PI/2)
+            const sSpan = counts.S * blockSpan;
+            let currentAngle = -Math.PI / 2 - (sSpan / 2);
+            
+            const sections = [
+                { p: 'S', c: counts.S, r: reverses.S }, // ด้านบน
+                { p: 'W', c: counts.W, r: reverses.W }, // ด้านขวา
+                { p: 'N', c: counts.N, r: reverses.N }, // ด้านล่าง
+                { p: 'E', c: counts.E, r: reverses.E }  // ด้านซ้าย
+            ];
+            
+            sections.forEach(sec => {
+                for(let i=0; i<sec.c; i++) {
+                    const charIdx = sec.r ? (sec.c - 1 - i) : i;
+                    const labelStr = `${sec.p}${tierNum}${String.fromCharCode(65 + charIdx)}`;
+                    stadiumGroup.add(createZoneSegment(radIn, radOut, yPos, height, currentAngle, blockSpan - GAP, config, labelStr));
+                    currentAngle += blockSpan;
+                }
+            });
+        }
+
+        // Blue Tier 1 (59 บล็อก)
+        buildFullTier(48, 62, 2, 8, TIER_CONFIG.BLUE, '1', 
+            {S: 12, W: 18, N: 12, E: 17}, 
+            {S: false, W: false, N: true, E: false} // N1L ถึง N1A เรียงย้อน
+        );
+        // Yellow Tier 2 (68 บล็อก)
+        buildFullTier(65, 80, 10, 12, TIER_CONFIG.YELLOW, '2', 
+            {S: 12, W: 22, N: 12, E: 22}, 
+            {S: false, W: false, N: true, E: false}
+        );
+
+        // 3.3 Upper Stands (GREEN & TEAL) - มีเฉพาะด้านข้างซ้าย-ขวา
+        function buildSideTier(radIn, radOut, yPos, height, config, tierNum, count, prefix, isWest) {
+            const span = 2.0; // ความกว้างของส่วนโค้ง (เรเดียน)
+            const blockSpan = span / count;
+            const startAngle = isWest ? (0 - span/2) : (Math.PI - span/2);
+            
+            for(let i=0; i<count; i++) {
+                const angle = startAngle + (i * blockSpan);
+                const labelStr = `${prefix}${tierNum}${String.fromCharCode(65 + i)}`;
+                stadiumGroup.add(createZoneSegment(radIn, radOut, yPos, height, angle, blockSpan - GAP, config, labelStr));
+            }
+        }
+
+        buildSideTier(83, 95, 22, 14, TIER_CONFIG.GREEN, '3', 18, 'W', true);  // W3A - W3R
+        buildSideTier(83, 95, 22, 14, TIER_CONFIG.GREEN, '3', 18, 'E', false); // E3A - E3R
+        buildSideTier(97, 108, 36, 16, TIER_CONFIG.TEAL, '4', 18, 'W', true);  // W4A - W4R
+        buildSideTier(97, 108, 36, 16, TIER_CONFIG.TEAL, '4', 18, 'E', false); // E4A - E4R
 
         const groundGeo = new THREE.PlaneGeometry(300, 300);
         groundGeo.scale(1, OVAL_SCALE_Z, 1);
@@ -212,32 +262,28 @@
         stadiumGroup.add(ground);
         scene.add(stadiumGroup);
 
-        // --- 4. Build Stage (White X-Shape + LED Screens + Neon) ---
+        // --- 4. Build Stage (White X-Shape + LED Screens + Overhead 3D LED) ---
         const realStage = new THREE.Group();
         const stageHeight = 1.2;
-        
-        // วัสดุเวทีสีขาวนวล
         const stageMat = new THREE.MeshStandardMaterial({ color: 0xffffff, emissive: 0x222222, roughness: 0.3 });
-        // วัสดุหน้าจอ LED และไฟนีออน
         const screenMatBg = new THREE.MeshStandardMaterial({ color: 0x220000, emissive: 0x990022, emissiveIntensity: 1.0 });
         const screenMatFg = new THREE.MeshStandardMaterial({ color: 0xffffff, emissive: 0xffffff, emissiveIntensity: 1.5 });
         const cyanNeon = new THREE.MeshBasicMaterial({ color: 0x00ffff });
 
-        // เวทีวงกลมหลักตรงกลาง
         const centerRadius = 8;
         const centerStage = new THREE.Mesh(new THREE.CylinderGeometry(centerRadius, centerRadius, stageHeight, 32), stageMat);
         centerStage.position.y = stageHeight / 2;
         realStage.add(centerStage);
 
-        // --- เปลี่ยนโครงเหล็กเป็นจอ LED 3D ทรง 8 เหลี่ยมเหนือเวที (3D Overhead Screen) ---
+        // 4.1 จอ Overhead 3D LED เหนือเวที (8 เหลี่ยม มีความหนา)
         const overheadScreenGroup = new THREE.Group();
-        overheadScreenGroup.position.y = stageHeight + 11; // ลอยเหนือหัวศิลปิน
+        overheadScreenGroup.position.y = stageHeight + 11;
         
         const numScreens = 8;
         const overheadRadius = centerRadius - 1;
-        const scWidth = 2 * overheadRadius * Math.tan(Math.PI / numScreens) - 0.2; // คำนวณความกว้างให้ต่อกันเป็น 8 เหลี่ยมพอดี
+        const scWidth = 2 * overheadRadius * Math.tan(Math.PI / numScreens) - 0.2;
         const scHeight = 3.5;
-        const scDepth = 0.6; // ความหนาของหน้าจอ 3D
+        const scDepth = 0.6; 
 
         const trussMat = new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.8, metalness: 0.9 });
         const overheadLedBg = new THREE.MeshStandardMaterial({ color: 0x220000, emissive: 0x880011, emissiveIntensity: 1.2 });
@@ -247,42 +293,35 @@
             const angle = (i / numScreens) * Math.PI * 2;
             const screenNode = new THREE.Group();
             
-            // โครงหน้าจอ (ความหนา 3D)
             const frame = new THREE.Mesh(new THREE.BoxGeometry(scWidth, scHeight, scDepth), trussMat);
             screenNode.add(frame);
             
-            // แผงจอ LED หันออกด้านนอก
             const screenFaceOut = new THREE.Mesh(new THREE.BoxGeometry(scWidth - 0.4, scHeight - 0.4, 0.1), overheadLedBg);
             screenFaceOut.position.z = scDepth / 2 + 0.05;
             screenNode.add(screenFaceOut);
 
-            // กราฟิกสีขาวบนหน้าจอด้านนอก
             const graphicFaceOut = new THREE.Mesh(new THREE.BoxGeometry(scWidth * 0.6, scHeight * 0.3, 0.1), overheadLedFg);
             graphicFaceOut.position.z = scDepth / 2 + 0.1;
             screenNode.add(graphicFaceOut);
 
-            // แผงจอ LED หันเข้าด้านใน (เห็นได้ถ้ามองมุมเสย)
             const screenFaceIn = new THREE.Mesh(new THREE.BoxGeometry(scWidth - 0.4, scHeight - 0.4, 0.1), overheadLedBg);
             screenFaceIn.position.z = -scDepth / 2 - 0.05;
             screenNode.add(screenFaceIn);
 
             screenNode.position.set(Math.sin(angle) * overheadRadius, 0, Math.cos(angle) * overheadRadius);
-            screenNode.rotation.y = angle; // หมุนให้หันออกด้านนอก
-            
+            screenNode.rotation.y = angle; 
             overheadScreenGroup.add(screenNode);
         }
         
-        // เพิ่มไฟวงแหวนด้านล่างของหน้าจอ
         const ringLightGeo = new THREE.TorusGeometry(overheadRadius - 0.5, 0.15, 8, 32);
         const ringLightMat = new THREE.MeshBasicMaterial({ color: 0x00ffff });
         const ringLight = new THREE.Mesh(ringLightGeo, ringLightMat);
         ringLight.rotation.x = Math.PI / 2;
         ringLight.position.y = -scHeight / 2;
         overheadScreenGroup.add(ringLight);
-
         realStage.add(overheadScreenGroup);
 
-        // ทางเดิน 4 แฉก + จอ LED ด้านข้าง + เวทีย่อย
+        // 4.2 ทางเดินเวที 4 แฉก
         const armLen = 16;
         const armWid = 3.5;
         const nodeRadius = 4;
@@ -291,12 +330,10 @@
             const armGroup = new THREE.Group();
             const angle = (i * Math.PI / 2) + Math.PI / 4; 
 
-            // ทางเดินเชื่อมสีขาว
             const arm = new THREE.Mesh(new THREE.BoxGeometry(armLen, stageHeight, armWid), stageMat);
             arm.position.set((armLen/2) + (centerRadius/2) + 2, stageHeight/2, 0);
             armGroup.add(arm);
 
-            // ไฟนีออนสีฟ้าที่ขอบทางเดิน
             const edge1 = new THREE.Mesh(new THREE.BoxGeometry(armLen, 0.2, 0.2), cyanNeon);
             edge1.position.set((armLen/2) + (centerRadius/2) + 2, stageHeight, armWid/2 - 0.1);
             armGroup.add(edge1);
@@ -304,19 +341,15 @@
             edge2.position.set((armLen/2) + (centerRadius/2) + 2, stageHeight, -armWid/2 + 0.1);
             armGroup.add(edge2);
 
-            // จอ LED เฉียงๆ ด้านข้างทางเดิน
             const scLen = 8; const scHei = 3;
             const screen = new THREE.Mesh(new THREE.BoxGeometry(scLen, scHei, 0.4), screenMatBg);
             screen.position.set((scLen/2) + centerRadius + 2, stageHeight + scHei/2, armWid/2 + 0.4);
             screen.rotation.y = -0.15; 
             
-            // กราฟิกบนจอ LED
             const graphic = new THREE.Mesh(new THREE.BoxGeometry(scLen * 0.7, scHei * 0.5, 0.5), screenMatFg);
             graphic.position.copy(screen.position); graphic.rotation.copy(screen.rotation);
-            
             armGroup.add(screen); armGroup.add(graphic);
 
-            // เวทีย่อย (ปลายทางเดิน)
             const node = new THREE.Mesh(new THREE.CylinderGeometry(nodeRadius, nodeRadius, stageHeight, 32), stageMat);
             node.position.set(armLen + centerRadius + 1, stageHeight/2, 0);
             armGroup.add(node);
@@ -326,24 +359,19 @@
         }
         stadiumGroup.add(realStage);
 
-        // --- 5. 3D BTS Members (จำลองจากภาพ 2569-06-07_12-56-00.png) ---
-        // ใช้ 3D Primitive ประกอบร่างเป็นคน เพื่อให้แน่ใจว่าโหลดติด 100% และปรับแต่งสีชุดได้ตามรูปอ้างอิง
+        // --- 5. 3D BTS Members (ศิลปิน 3D คัสตอมชุดตามภาพเป๊ะ) ---
         const btsMembers = [];
         const btsGroup = new THREE.Group();
         
         function createStyledHuman(index) {
             const human = new THREE.Group();
-            
-            // วัสดุพื้นฐาน
             const skinMat = new THREE.MeshStandardMaterial({ color: 0xffe0bd, roughness: 0.4 });
-            const suitMat = new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.7 }); // ชุดสูทสีดำ
-            const whiteMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.8 }); // เสื้อสีขาว/ผ้าพันคอ
+            const suitMat = new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.7 });
+            const whiteMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.8 });
             
-            // จัดการสีผม (Jimin คนที่ 7 (index 6) ผมสีบลอนด์, นอกนั้นผมดำ)
             const hairColor = (index === 6) ? 0xf5d061 : 0x1a1a1a;
             const hairMat = new THREE.MeshStandardMaterial({ color: hairColor, roughness: 0.9 });
 
-            // ชิ้นส่วนร่างกาย
             const headGeo = new THREE.BoxGeometry(0.5, 0.5, 0.5);
             const hairGeo = new THREE.BoxGeometry(0.55, 0.2, 0.55);
             const torsoGeo = new THREE.BoxGeometry(0.8, 1.2, 0.35);
@@ -353,15 +381,12 @@
             const torso = new THREE.Mesh(torsoGeo, suitMat);
             torso.position.y = 1.2; 
 
-            // ตกแต่งชุดตาม Reference Image
             if (index === 1 || index === 3) {
-                // Jin และ RM มีผ้าพันคอสีขาว
                 const scarf = new THREE.Mesh(new THREE.BoxGeometry(0.3, 1.1, 0.4), whiteMat);
                 scarf.position.set(0, 0, 0.05);
                 torso.add(scarf);
             }
             if (index === 2) {
-                // Suga เสื้อซับในสีขาวปลิ้นออกมา
                 const shirt = new THREE.Mesh(new THREE.BoxGeometry(0.82, 0.5, 0.37), whiteMat);
                 shirt.position.set(0, -0.4, 0);
                 torso.add(shirt);
@@ -404,18 +429,13 @@
             torso.add(leftLegGroup);
 
             human.add(torso);
-            
-            // จัดแถวให้ยืนหน้ากระดาน 7 คนบนเวที
             const spacing = 1.4;
-            const xOffset = (index - 3) * spacing;
-            human.position.set(xOffset, stageHeight, 0);
-
+            human.position.set((index - 3) * spacing, stageHeight, 0);
             btsGroup.add(human);
 
             return {
                 root: human, torso: torso, head: headGroup,
                 rightArm: rightArmGroup, leftArm: leftArmGroup,
-                rightLeg: rightLegGroup, leftLeg: leftLegGroup,
                 animSeed: Math.random() * Math.PI * 2
             };
         }
@@ -501,18 +521,15 @@
                 }
             }
 
-            // Animate BTS Members (เต้นและโยกหัวเบาๆ)
-            const danceSpeed = time * 3;
             btsMembers.forEach(m => {
-                m.root.position.y = stageHeight + Math.abs(Math.sin(danceSpeed + m.animSeed)) * 0.1;
-                m.head.rotation.y = Math.sin(danceSpeed * 0.5 + m.animSeed) * 0.2;
-                m.rightArm.rotation.x = -Math.PI / 3 + Math.sin(danceSpeed + m.animSeed) * 0.2; // ถือไมค์
-                m.leftArm.rotation.x = Math.sin(danceSpeed * 0.5 + m.animSeed) * 0.3; // แกว่งแขน
+                m.root.position.y = stageHeight + Math.abs(Math.sin(time * 3 + m.animSeed)) * 0.1;
+                m.head.rotation.y = Math.sin(time * 1.5 + m.animSeed) * 0.2;
+                m.rightArm.rotation.x = -Math.PI / 3 + Math.sin(time * 3 + m.animSeed) * 0.2; 
+                m.leftArm.rotation.x = Math.sin(time * 1.5 + m.animSeed) * 0.3; 
             });
 
-            // หมุนหน้าจอ 3D ด้านบนอย่างช้าๆ
             if (typeof overheadScreenGroup !== 'undefined') {
-                overheadScreenGroup.rotation.y = time * 0.1;
+                overheadScreenGroup.rotation.y = time * 0.1; // หน้าจอ 3D ด้านบนหมุนรอบตัวเองอย่างช้าๆ
             }
 
             controls.update();
@@ -535,5 +552,4 @@
     </script>
 </body>
 </html>
-
 
