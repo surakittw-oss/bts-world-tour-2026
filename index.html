@@ -314,10 +314,11 @@
 
         scene.add(stadiumGroup);
 
-        // --- 5.1 3D BTS Members (ยังคงใช้รูปภาพเหมือนเดิม แต่ย่อขนาดให้พอดีเวทีใหม่) ---
+        // --- 5.1 3D BTS Members (อัปเดตไฟล์ภาพใหม่ล่าสุด และปรับให้โหลดไว) ---
         const btsGroup = new THREE.Group();
         const textureLoader = new THREE.TextureLoader();
-        const btsTexture = textureLoader.load('353340C5-FABD-457B-877D-C63AEA66FCF4.png');
+        // อัปเดตชื่อไฟล์เป็นไฟล์ภาพล่าสุดที่คุณแนบมา
+        const btsTexture = textureLoader.load('2569-06-07_12-56-00.png');
 
         function createBTSSprite(index, total) {
             const texture = btsTexture.clone();
@@ -444,6 +445,7 @@
     </script>
 </body>
 </html>
+
 
 
 
