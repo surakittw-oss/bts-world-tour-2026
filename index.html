@@ -314,38 +314,51 @@
 
         scene.add(stadiumGroup);
 
-        // --- 5.1 3D BTS Members (อัปเดตไฟล์ภาพใหม่ล่าสุด และปรับให้โหลดไว) ---
+        // --- 5.1 3D BTS Members (อัปเดตระบบรอโหลดภาพให้เสร็จก่อนสร้าง) ---
         const btsGroup = new THREE.Group();
-        const textureLoader = new THREE.TextureLoader();
-        // อัปเดตชื่อไฟล์เป็นไฟล์ภาพล่าสุดที่คุณแนบมา
-        const btsTexture = textureLoader.load('2569-06-07_12-56-00.png');
-
-        function createBTSSprite(index, total) {
-            const texture = btsTexture.clone();
-            texture.needsUpdate = true;
-            texture.repeat.set(1 / total, 1);
-            texture.offset.x = index / total;
-
-            const material = new THREE.SpriteMaterial({ map: texture, transparent: true });
-            const sprite = new THREE.Sprite(material);
-
-            // ย่อขนาด Sprite ลงให้พอดีกับเวทีขนาดเล็ก
-            const spriteWidth = 1.2;
-            const spriteHeight = 2.4;
-            sprite.scale.set(spriteWidth, spriteHeight, 1);
-
-            const spacing = 0.8;
-            const xOffset = (index - (total - 1) / 2) * spacing;
-            // จัดตำแหน่งให้ยืนตรงกลางเวที
-            sprite.position.set(xOffset, stageHeight + (spriteHeight / 2), 0);
-
-            return sprite;
-        }
-
-        for (let i = 0; i < 7; i++) {
-            btsGroup.add(createBTSSprite(i, 7));
-        }
         realStage.add(btsGroup); // นำไปผูกไว้กับเวที Real Stage ตรงกลาง
+
+        const textureLoader = new THREE.TextureLoader();
+        textureLoader.load(
+            '2569-06-07_12-56-00.png',
+            function(texture) {
+                // เมื่อโหลดภาพเสร็จสมบูรณ์ ค่อยทำการสร้างและตัดแบ่งภาพ
+                for (let i = 0; i < 7; i++) {
+                    const tex = texture.clone();
+                    tex.needsUpdate = true;
+                    tex.repeat.set(1 / 7, 1);
+                    tex.offset.x = i / 7;
+
+                    const material = new THREE.SpriteMaterial({ map: tex, transparent: true });
+                    const sprite = new THREE.Sprite(material);
+
+                    // ปรับขนาดให้ใหญ่ขึ้นเล็กน้อย จะได้เห็นชัดๆ จากมุมไกล
+                    const spriteWidth = 2.5;
+                    const spriteHeight = 5.0;
+                    sprite.scale.set(spriteWidth, spriteHeight, 1);
+
+                    const spacing = 1.2;
+                    const xOffset = (i - 3) * spacing;
+                    // จัดตำแหน่งให้ยืนตรงกลางเวที
+                    sprite.position.set(xOffset, stageHeight + (spriteHeight / 2), 0);
+
+                    btsGroup.add(sprite);
+                }
+            },
+            undefined,
+            function(error) {
+                // หากไฟล์ภาพมีปัญหาหรือโหลดไม่ขึ้น จะแสดงโมเดลเรืองแสงสีม่วงแทน
+                console.error("ไม่สามารถโหลดภาพศิลปินได้", error);
+                for (let i = 0; i < 7; i++) {
+                    const fallbackMat = new THREE.MeshStandardMaterial({ color: 0xffffff, emissive: 0x8a2be2, emissiveIntensity: 0.5 });
+                    const mesh = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.3, 2.5, 8), fallbackMat);
+                    const spacing = 1.2;
+                    const xOffset = (i - 3) * spacing;
+                    mesh.position.set(xOffset, stageHeight + 1.25, 0);
+                    btsGroup.add(mesh);
+                }
+            }
+        );
 
         // --- 6. Interaction ---
         const raycaster = new THREE.Raycaster();
@@ -445,6 +458,7 @@
     </script>
 </body>
 </html>
+
 
 
 
